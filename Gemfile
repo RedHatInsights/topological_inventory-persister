@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 gem "manageiq-messaging", '~> 0.1.0'
 
 gem "inventory_refresh",          :git => "https://github.com/ManageIQ/inventory_refresh",          :branch => "master"
-gem "topological_inventory-core", :path => File.expand_path("../topological_inventory-core", __dir__) #:git => "https://github.com/ManageIQ/topological_inventory-core", :branch => "master"
+gem "topological_inventory-core", :git => "https://github.com/ManageIQ/topological_inventory-core", :branch => "master"
 
 group :development do
   gem "rspec-rails", "~>3.8"
