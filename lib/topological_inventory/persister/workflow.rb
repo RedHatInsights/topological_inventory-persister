@@ -169,7 +169,7 @@ module TopologicalInventory
       def requeue_sweeping!
         logger.info("Re-queuing sweeping job...")
         messaging_client.publish_message(
-          :service => "topological_inventory-persister",
+          :service => "platform.topological-inventory.persister",
           :message => "save_inventory",
           :payload => payload,
         )
