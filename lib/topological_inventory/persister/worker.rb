@@ -65,7 +65,7 @@ module TopologicalInventory
 
       def queue_opts
         {
-          :service => "topological_inventory-persister",
+          :service => "platform.topological-inventory.persister",
         }
       end
 
