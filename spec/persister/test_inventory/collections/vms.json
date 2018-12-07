@@ -1,0 +1,99 @@
+{
+  "name": "OCP",
+  "schema": {
+    "name": "Default"
+  },
+  "source": "9a874712-9a55-49ab-a46a-c823acc35503",
+  "refresh_state_uuid": "3022848a-b70f-46a3-9c7a-ee7f8009e90a",
+  "refresh_state_part_uuid": "560c5489-c597-42f9-88c6-c8b459b5d319",
+  "collections": [
+    {
+      "name": "vms",
+      "data": [
+        {
+          "source_ref": "i-8b5739f2",
+          "uid_ems": "i-8b5739f2",
+          "name": "EmsRefreshSpec-PoweredOn-VPC",
+          "power_state": "on",
+          "flavor": {
+            "inventory_collection_name": "flavors",
+            "reference": {
+              "source_ref": "t1.micro"
+            },
+            "ref": "manager_ref"
+          }
+        },
+        {
+          "source_ref": "i-0bca58e6e540ddc39",
+          "uid_ems": "i-0bca58e6e540ddc39",
+          "name": "EmsRefreshSpecStack",
+          "power_state": "on",
+          "flavor": {
+            "inventory_collection_name": "flavors",
+            "reference": {
+              "source_ref": "t2.nano"
+            },
+            "ref": "manager_ref"
+          }
+        },
+        {
+          "source_ref": "i-0e1752ff841801f65",
+          "uid_ems": "i-0e1752ff841801f65",
+          "name": "EmsRefreshSpec-PoweredOff",
+          "power_state": "off",
+          "flavor": {
+            "inventory_collection_name": "flavors",
+            "reference": {
+              "source_ref": "t1.micro"
+            },
+            "ref": "manager_ref"
+          }
+        },
+        {
+          "source_ref": "i-680071e9",
+          "uid_ems": "i-680071e9",
+          "name": "EmsRefreshSpec-PoweredOn-Basic3",
+          "power_state": "off",
+          "flavor": {
+            "inventory_collection_name": "flavors",
+            "reference": {
+              "source_ref": "t1.micro"
+            },
+            "ref": "manager_ref"
+          }
+        },
+        {
+          "source_ref": "i-c72af2f6",
+          "uid_ems": "i-c72af2f6",
+          "name": "EmsRefreshSpec-PoweredOn-VPC1",
+          "power_state": "on",
+          "flavor": {
+            "inventory_collection_name": "flavors",
+            "reference": {
+              "source_ref": "t2.micro"
+            },
+            "ref": "manager_ref"
+          }
+        },
+        {
+          "source_ref": "i-dc1ee486",
+          "uid_ems": "i-dc1ee486",
+          "name": "EmsRefreshSpec-PoweredOn-OtherRegion",
+          "power_state": "on",
+          "flavor": {
+            "inventory_collection_name": "flavors",
+            "reference": {
+              "source_ref": "t1.micro"
+            },
+            "ref": "manager_ref"
+          }
+        }
+      ]
+    }
+  ]
+}
+
+
+
+
+

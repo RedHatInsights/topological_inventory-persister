@@ -1,6 +1,9 @@
 require "topological_inventory/persister/worker"
+require_relative "refresh_worker_helper"
 
 describe TopologicalInventory::Persister::Worker do
+  include TestInventory::RefreshWorkerHelper
+
   let(:tenant) { Tenant.find_or_create_by!(:name => "default") }
   let(:vm_uuid) { "6fd5b322-e333-4bb7-bf70-b74bdf13d4c6" }
   let!(:vm) { Vm.find_or_create_by!(:tenant => tenant, :source_ref => "vm-1", :uid_ems => vm_uuid, :source => source_aws) }
@@ -230,15 +233,5 @@ describe TopologicalInventory::Persister::Worker do
         match_array([])
       )
     end
-  end
-
-  def refresh(client, path)
-    inventory = JSON.parse(File.read(test_inventory_dir.join(*path)))
-    messages = [ManageIQ::Messaging::ReceivedMessage.new(nil, nil, inventory, nil)]
-
-    allow(client).to receive(:subscribe_messages).and_yield(messages)
-
-    described_class.new.run
-    source.reload
   end
 end

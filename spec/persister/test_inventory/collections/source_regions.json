@@ -1,0 +1,91 @@
+{
+  "name": "OCP",
+  "schema": {
+    "name": "Default"
+  },
+  "source": "9a874712-9a55-49ab-a46a-c823acc35503",
+  "refresh_state_uuid": "3022848a-b70f-46a3-9c7a-ee7f8009e90a",
+  "refresh_state_part_uuid": "560c5489-d797-42f9-88b6-c8b459b5d319",
+  "collections": [
+    {
+      "name": "source_regions",
+      "data": [
+        {
+          "source_ref": "ap-south-1",
+          "name": "ap-south-1",
+          "endpoint": "ec2.ap-south-1.amazonaws.com"
+        },
+        {
+          "source_ref": "eu-west-3",
+          "name": "eu-west-3",
+          "endpoint": "ec2.eu-west-3.amazonaws.com"
+        },
+        {
+          "source_ref": "eu-west-2",
+          "name": "eu-west-2",
+          "endpoint": "ec2.eu-west-2.amazonaws.com"
+        },
+        {
+          "source_ref": "eu-west-1",
+          "name": "eu-west-1",
+          "endpoint": "ec2.eu-west-1.amazonaws.com"
+        },
+        {
+          "source_ref": "ap-northeast-2",
+          "name": "ap-northeast-2",
+          "endpoint": "ec2.ap-northeast-2.amazonaws.com"
+        },
+        {
+          "source_ref": "ap-northeast-1",
+          "name": "ap-northeast-1",
+          "endpoint": "ec2.ap-northeast-1.amazonaws.com"
+        },
+        {
+          "source_ref": "sa-east-1",
+          "name": "sa-east-1",
+          "endpoint": "ec2.sa-east-1.amazonaws.com"
+        },
+        {
+          "source_ref": "ca-central-1",
+          "name": "ca-central-1",
+          "endpoint": "ec2.ca-central-1.amazonaws.com"
+        },
+        {
+          "source_ref": "ap-southeast-1",
+          "name": "ap-southeast-1",
+          "endpoint": "ec2.ap-southeast-1.amazonaws.com"
+        },
+        {
+          "source_ref": "ap-southeast-2",
+          "name": "ap-southeast-2",
+          "endpoint": "ec2.ap-southeast-2.amazonaws.com"
+        },
+        {
+          "source_ref": "eu-central-1",
+          "name": "eu-central-1",
+          "endpoint": "ec2.eu-central-1.amazonaws.com"
+        },
+        {
+          "source_ref": "us-east-1",
+          "name": "us-east-1",
+          "endpoint": "ec2.us-east-1.amazonaws.com"
+        },
+        {
+          "source_ref": "us-east-2",
+          "name": "us-east-2",
+          "endpoint": "ec2.us-east-2.amazonaws.com"
+        },
+        {
+          "source_ref": "us-west-1",
+          "name": "us-west-1",
+          "endpoint": "ec2.us-west-1.amazonaws.com"
+        },
+        {
+          "source_ref": "us-west-2",
+          "name": "us-west-2",
+          "endpoint": "ec2.us-west-2.amazonaws.com"
+        }
+      ]
+    }
+  ]
+}
