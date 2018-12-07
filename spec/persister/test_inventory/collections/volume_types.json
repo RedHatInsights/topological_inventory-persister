@@ -1,0 +1,76 @@
+{
+  "name": "OCP",
+  "schema": {
+    "name": "Default"
+  },
+  "source": "9a874712-9a55-49ab-a46a-c823acc35503",
+  "refresh_state_uuid": "3022848a-b70f-46a3-9c7a-ee7f8009e90a",
+  "refresh_state_part_uuid": "560c5489-c597-42f9-88e6-c8b459b5d319",
+  "collections": [
+    {
+      "name": "volume_types",
+      "data": [
+        {
+          "source_ref": "standard",
+          "name": "standard",
+          "description": "Magnetic",
+          "extra": {
+            "storageMedia": "HDD-backed",
+            "volumeType": "Magnetic",
+            "maxIopsvolume": "40 - 200",
+            "maxVolumeSize": "1 TiB"
+          }
+        },
+        {
+          "source_ref": "sc1",
+          "name": "sc1",
+          "description": "Cold HDD",
+          "extra": {
+            "storageMedia": "HDD-backed",
+            "volumeType": "Cold HDD",
+            "maxIopsvolume": "250 - based on 1 MiB I/O size",
+            "maxVolumeSize": "16 TiB"
+          }
+        },
+        {
+          "source_ref": "gp2",
+          "name": "gp2",
+          "description": "General Purpose",
+          "extra": {
+            "storageMedia": "SSD-backed",
+            "volumeType": "General Purpose",
+            "maxIopsvolume": "10000",
+            "maxVolumeSize": "16 TiB"
+          }
+        },
+        {
+          "source_ref": "piops",
+          "name": "piops",
+          "description": "Provisioned IOPS",
+          "extra": {
+            "storageMedia": "SSD-backed",
+            "volumeType": "Provisioned IOPS",
+            "maxIopsvolume": "20000",
+            "maxVolumeSize": "16 TiB"
+          }
+        },
+        {
+          "source_ref": "st1",
+          "name": "st1",
+          "description": "Throughput Optimized HDD",
+          "extra": {
+            "storageMedia": "HDD-backed",
+            "volumeType": "Throughput Optimized HDD",
+            "maxIopsvolume": "500 - based on 1 MiB I/O size",
+            "maxVolumeSize": "16 TiB"
+          }
+        }
+      ]
+    }
+  ]
+}
+
+
+
+
+
