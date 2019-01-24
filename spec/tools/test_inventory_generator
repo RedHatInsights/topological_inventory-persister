@@ -3,8 +3,8 @@
 require "json"
 require "pathname"
 
-require "topological_inventory/ingress_api/client"
-include TopologicalInventory::IngressApi::Client
+require "topological_inventory-ingress_api-client"
+include TopologicalInventoryIngressApiClient
 
 module TopologicalInventory
   module TestInventoryGenerator
