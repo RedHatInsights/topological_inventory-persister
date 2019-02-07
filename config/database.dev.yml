@@ -10,13 +10,13 @@ default: &default
 
 development:
   <<: *default
-  database: topological_inventory_persister_development
+  database: topological_inventory_development
   min_messages: notice
 
 test:
   <<: *default
-  database: topological_inventory_persister_test
+  database: topological_inventory_test
 
 production:
   <<: *default
-  database: topological_inventory_persister_production
+  database: topological_inventory_production
