@@ -10,12 +10,6 @@ queue_port = ENV["QUEUE_PORT"] || 9092
 
 TopologicalInventory::Core::ArHelper.database_yaml_path = Pathname.new(__dir__).join("../config/database.yml")
 TopologicalInventory::Core::ArHelper.load_environment!
+
 persister_worker = TopologicalInventory::Persister::Worker.new(:host => queue_host, :port => queue_port)
-
-begin
-  Thread.new { persister_worker.run }
-
-  loop { sleep 5 }
-rescue Interrupt
-  persister_worker.stop
-end
+persister_worker.run

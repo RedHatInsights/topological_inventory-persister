@@ -28,11 +28,6 @@ module TopologicalInventory
         client&.close
       end
 
-      def stop
-        client&.close
-        self.client = nil
-      end
-
       private
 
       attr_accessor :messaging_client_opts, :client
