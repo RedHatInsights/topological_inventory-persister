@@ -24,6 +24,9 @@ module TopologicalInventory
         client.subscribe_messages(queue_opts.merge(:max_bytes => 500000)) do |messages|
           messages.each { |msg| process_message(client, msg) }
         end
+      rescue => e
+        logger.error(e.message)
+        logger.error(e.backtrace.join("\n"))
       ensure
         client&.close
       end

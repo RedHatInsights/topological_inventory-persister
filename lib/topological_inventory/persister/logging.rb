@@ -1,3 +1,5 @@
+require "manageiq/loggers"
+
 module TopologicalInventory
   module Persister
     class << self
@@ -5,7 +7,7 @@ module TopologicalInventory
     end
 
     def self.logger
-      @logger ||= Logger.new(STDOUT, :level => Logger::INFO)
+      @logger ||= ManageIQ::Loggers::Container.new
     end
 
     module Logging
