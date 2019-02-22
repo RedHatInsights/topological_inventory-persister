@@ -69,6 +69,7 @@ module TopologicalInventory
           :protocol   => :Kafka,
           :client_ref => "persister-worker",
           :group_ref  => "persister-worker",
+          :encoding   => "json",
         }
       end
     end

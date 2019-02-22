@@ -130,7 +130,7 @@ module TopologicalInventory
         messaging_client.publish_message(
           :service => "platform.topological-inventory.persister-output",
           :message => "event",
-          :payload => message.to_json, # TODO(lsmola) Need to encode to json, since miq-messaging fails encoding this to YAML
+          :payload => message
         )
       end
 
