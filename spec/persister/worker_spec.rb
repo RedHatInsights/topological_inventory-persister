@@ -28,6 +28,7 @@ describe TopologicalInventory::Persister::Worker do
     before do
       allow(ManageIQ::Messaging::Client).to receive(:open).and_return(client)
       allow(client).to receive(:close)
+      allow(client).to receive(:publish_message)
       allow(client).to receive(:subscribe_messages).and_yield(messages)
 
       described_class.new.run
