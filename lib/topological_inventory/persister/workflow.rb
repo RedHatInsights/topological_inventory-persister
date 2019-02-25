@@ -104,12 +104,34 @@ module TopologicalInventory
         upsert_refresh_state_records(:status => :started, :refresh_state_status => :started)
 
         persist!
+        send_changes_to_queue!
 
         upsert_refresh_state_records(:status => :finished)
       rescue StandardError => e
         upsert_refresh_state_records(:status => :error, :error_message => e.message.truncate(150))
 
         raise(e)
+      end
+
+      def send_changes_to_queue!
+        message = {
+          :external_tenant => manager.tenant.external_tenant,
+          :source          => manager.uid
+        }
+
+        message[:payload] = persister.inventory_collections.select { |x| x.name }.index_by(&:name).transform_values! do |x|
+          hash = {}
+          hash[:created] = x.created_records unless x.created_records.empty?
+          hash[:updated] = x.updated_records unless x.updated_records.empty?
+          hash[:deleted] = x.deleted_records unless x.deleted_records.empty?
+          hash.empty? ? nil : hash
+        end.compact
+
+        messaging_client.publish_message(
+          :service => "platform.topological-inventory.persister-output",
+          :message => "event",
+          :payload => message
+        )
       end
 
       # Sweeps inactive records based on :last_seen_at attribute
