@@ -31,7 +31,7 @@ describe TopologicalInventory::Persister::Worker do
       allow(ManageIQ::Messaging::Client).to receive(:open).and_return(client)
       allow(client).to receive(:close)
 
-      # There should be 1 publish call writing to persister-output queue
+      # There should be 1 publish call writing to persister-output-stream queue
       expect(client).to receive(:publish_message).exactly(1).times
     end
 
