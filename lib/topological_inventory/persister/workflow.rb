@@ -128,7 +128,7 @@ module TopologicalInventory
         end.compact
 
         messaging_client.publish_message(
-          :service => "platform.topological-inventory.persister-output",
+          :service => "platform.topological-inventory.persister-output-stream",
           :message => "event",
           :payload => message
         )
