@@ -9,8 +9,8 @@ RUN yum -y install centos-release-scl-rh && \
                    # For checking service status
                    nmap-ncat \
                    # To compile pg gem
-                   rh-postgresql95-postgresql-devel \
-                   rh-postgresql95-postgresql-libs \
+                   rh-postgresql10-postgresql-devel \
+                   rh-postgresql10-postgresql-libs \
                    && \
     yum clean all
 
@@ -21,7 +21,7 @@ WORKDIR $WORKDIR
 COPY . $WORKDIR
 COPY docker-assets/entrypoint /usr/bin
 
-RUN source /opt/rh/rh-postgresql95/enable && \
+RUN source /opt/rh/rh-postgresql10/enable && \
     echo "gem: --no-document" > ~/.gemrc && \
     gem install bundler --conservative --without development:test && \
     bundle install --jobs 8 --retry 3 && \
