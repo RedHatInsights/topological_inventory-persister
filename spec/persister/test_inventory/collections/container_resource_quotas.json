@@ -1,0 +1,118 @@
+{
+  "name": "OCP",
+  "schema": {
+    "name": "Default"
+  },
+  "source": "9a874712-9a55-49ab-a46a-c823acc35503",
+  "refresh_state_uuid": "59aa7270-5bc3-4626-ad1e-66c3d9b66af5",
+  "refresh_state_part_uuid": "55bf372b-4733-4c87-a50a-89097c86eaae",
+  "collections": [
+    {
+      "name": "container_resource_quotas",
+      "data": [
+        {
+          "source_ref": "807d6b84-f691-11e7-9bd4-0a46c474dfe0",
+          "name": "compute-resources",
+          "resource_version": "150282475",
+          "source_created_at": "2018-01-11T05:37:24Z",
+          "status": {
+            "hard": {
+              "limits.cpu": "2",
+              "limits.memory": "1Gi"
+            },
+            "used": {
+              "limits.cpu": "0",
+              "limits.memory": "0"
+            }
+          },
+          "spec": {
+            "hard": {
+              "limits.cpu": "2",
+              "limits.memory": "1Gi"
+            },
+            "scopes": [
+              "NotTerminating"
+            ]
+          },
+          "resource_timestamp": "2019-03-14 17:33:19 UTC",
+          "container_project": {
+            "inventory_collection_name": "container_projects",
+            "reference": {
+              "name": "test_project"
+            },
+            "ref": "by_name"
+          }
+        },
+        {
+          "source_ref": "807eacef-f691-11e7-9bd4-0a46c474dfe0",
+          "name": "compute-resources-timebound",
+          "resource_version": "148695380",
+          "source_created_at": "2018-01-11T05:37:24Z",
+          "status": {
+            "hard": {
+              "limits.cpu": "2",
+              "limits.memory": "1Gi"
+            },
+            "used": {
+              "limits.cpu": "0",
+              "limits.memory": "0"
+            }
+          },
+          "spec": {
+            "hard": {
+              "limits.cpu": "2",
+              "limits.memory": "1Gi"
+            },
+            "scopes": [
+              "Terminating"
+            ]
+          },
+          "resource_timestamp": "2019-03-14 17:33:19 UTC",
+          "container_project": {
+            "inventory_collection_name": "container_projects",
+            "reference": {
+              "name": "test_project"
+            },
+            "ref": "by_name"
+          }
+        },
+        {
+          "source_ref": "807b509d-f691-11e7-9bd4-0a46c474dfe0",
+          "name": "object-counts",
+          "resource_version": "148694002",
+          "source_created_at": "2018-01-11T05:37:24Z",
+          "status": {
+            "hard": {
+              "persistentvolumeclaims": "1",
+              "replicationcontrollers": "20",
+              "secrets": "20",
+              "services": "5"
+            },
+            "used": {
+              "persistentvolumeclaims": "0",
+              "replicationcontrollers": "3",
+              "secrets": "10",
+              "services": "2"
+            }
+          },
+          "spec": {
+            "hard": {
+              "persistentvolumeclaims": "1",
+              "replicationcontrollers": "20",
+              "secrets": "20",
+              "services": "5"
+            }
+          },
+          "resource_timestamp": "2019-03-14 17:33:19 UTC",
+          "container_project": {
+            "inventory_collection_name": "container_projects",
+            "reference": {
+              "name": "test_project"
+            },
+            "ref": "by_name"
+          }
+        }
+      ]
+    }
+  ]
+}

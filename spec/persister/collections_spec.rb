@@ -35,6 +35,32 @@ describe TopologicalInventory::Persister::Worker do
       expect(client).to receive(:publish_message).exactly(1).times
     end
 
+    it "refreshes container_resource_quotas" do
+      refresh(client, ["collections", "container_resource_quotas.json"])
+
+      expect(source.container_resource_quotas.count).to eq(3)
+
+      container_resource_quota = source.container_resource_quotas.find_by(:source_ref => "807d6b84-f691-11e7-9bd4-0a46c474dfe0")
+      expect(container_resource_quota).to(
+        have_attributes(
+          :tenant_id            => source.tenant_id,
+          :source_id            => source.id,
+          :container_project_id => nil,
+          :source_ref           => "807d6b84-f691-11e7-9bd4-0a46c474dfe0",
+          :resource_version     => "150282475",
+          :name                 => "compute-resources",
+          :status               => {
+            "hard" => {"limits.cpu" => "2", "limits.memory" => "1Gi"},
+            "used" => {"limits.cpu" => "0", "limits.memory" => "0"}
+          },
+          :spec                 => {
+            "hard"   => {"limits.cpu" => "2", "limits.memory" => "1Gi"},
+            "scopes" => ["NotTerminating"]
+          },
+        )
+      )
+    end
+
     it "refreshes flavors" do
       refresh(client, ["collections", "flavors.json"])
 
