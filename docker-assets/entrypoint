@@ -1,31 +1,12 @@
 #!/bin/bash
 
-function write_encryption_key() {
-  echo "== Writing encryption key =="
-  cat > $WORKDIR/v2_key << KEY
----
-:algorithm: aes-256-cbc
-:key: ${ENCRYPTION_KEY}
-KEY
+function urlescape() {
+  PAYLOAD="$1" ruby -rcgi -e "puts CGI.escape(ENV['PAYLOAD'])"
 }
 
-function check_svc_status() {
-  local SVC_NAME=$1 SVC_PORT=$2
+safeuser=$(urlescape ${DATABASE_USER})
+safepass=$(urlescape ${DATABASE_PASSWORD})
 
-  [[ $# -lt 2 ]] && echo "Error something seems wrong, we need at least two parameters to check service status" && exit 1
+export DATABASE_URL="postgresql://${safeuser}:${safepass}@${DATABASE_HOST}:${DATABASE_PORT}/topological_inventory_production?encoding=utf8&pool=5&wait_timeout=5"
 
-  echo "== Checking ${SVC_NAME}:$SVC_PORT status =="
-
-  while true; do
-    ncat ${SVC_NAME} ${SVC_PORT} < /dev/null && break
-    sleep 5
-  done
-  echo "${SVC_NAME}:${SVC_PORT} - accepting connections"
-}
-
-write_encryption_key
-
-# Wait for postgres to be ready
-check_svc_status $DATABASE_HOST $DATABASE_PORT
-
-bin/topological_inventory-persister
+exec ${@}

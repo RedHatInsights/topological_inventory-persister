@@ -20,6 +20,7 @@ WORKDIR $WORKDIR
 
 COPY . $WORKDIR
 COPY docker-assets/entrypoint /usr/bin
+COPY docker-assets/run_persister /usr/bin
 
 RUN source /opt/rh/rh-postgresql10/enable && \
     echo "gem: --no-document" > ~/.gemrc && \
@@ -33,3 +34,4 @@ RUN chgrp -R 0 $WORKDIR && \
     chmod -R g=u $WORKDIR
 
 ENTRYPOINT ["entrypoint"]
+CMD ["run_persister"]
