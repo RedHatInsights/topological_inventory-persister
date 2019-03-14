@@ -14,6 +14,9 @@ require "topological_inventory/core/ar_helper"
 TopologicalInventory::Core::ArHelper.database_yaml_path = Pathname.new(__dir__).join("../config/database.yml")
 TopologicalInventory::Core::ArHelper.load_environment!
 
+require "topological_inventory/persister/logging"
+TopologicalInventory::Persister.logger = Logger.new("/dev/null")
+
 RSpec.configure do |config|
   config.use_transactional_fixtures = true
   # rspec-expectations config goes here. You can use an alternate
