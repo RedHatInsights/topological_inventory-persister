@@ -35,6 +35,28 @@ describe TopologicalInventory::Persister::Worker do
       expect(client).to receive(:publish_message).exactly(1).times
     end
 
+    it "refreshes service_instances" do
+      refresh(client, ["collections", "service_instances.json"])
+
+      expect(source.service_instances.count).to eq(3)
+
+      service_instance = source.service_instances.find_by(:source_ref => "82e98be9-41bf-11e9-828d-0a580a8000cc")
+      service_plan     = source.service_plans.find_by(:source_ref => "836cc3e0-fdee-11e8-860c-06945c5af756")
+      service_offering = source.service_offerings.find_by(:source_ref => "836cc3e0-fdee-11e8-860c-06945c5af756")
+
+      expect(service_instance).to(
+        have_attributes(
+          :tenant_id           => source.tenant_id,
+          :source_id           => source.id,
+          :source_ref          => "82e98be9-41bf-11e9-828d-0a580a8000cc",
+          :name                => "amq62-basic-07f3e100-366a-41d5-afd8-7e3d7a90c5d4",
+          :service_plan_id     => service_plan.id,
+          :service_offering_id => service_offering.id,
+          :external_url        => "https://test_openshift.com:8443/console/project/default/browse/service-instances/amq62-basic-07f3e100-366a-41d5-afd8-7e3d7a90c5d4?tab=details"
+        )
+      )
+    end
+
     it "refreshes container_resource_quotas" do
       refresh(client, ["collections", "container_resource_quotas.json"])
 
