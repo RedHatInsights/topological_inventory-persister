@@ -1,0 +1,76 @@
+{
+  "name": "OCP",
+  "schema": {
+    "name": "Default"
+  },
+  "source": "9a874712-9a55-49ab-a46a-c823acc35503",
+  "refresh_state_uuid": "098e835d-00ea-4055-9afc-9c417c51e41f",
+  "refresh_state_part_uuid": "1017c464-ae21-4b0f-aab3-1a6eb373ad70",
+  "collections": [
+    {
+      "name": "service_instances",
+      "data": [
+        {
+          "source_ref": "82e98be9-41bf-11e9-828d-0a580a8000cc",
+          "name": "amq62-basic-07f3e100-366a-41d5-afd8-7e3d7a90c5d4",
+          "external_url": "https://test_openshift.com:8443/console/project/default/browse/service-instances/amq62-basic-07f3e100-366a-41d5-afd8-7e3d7a90c5d4?tab=details",
+          "source_created_at": "2019-03-08T16:30:40Z",
+          "service_offering": {
+            "inventory_collection_name": "service_offerings",
+            "reference": {
+              "source_ref": "836cc3e0-fdee-11e8-860c-06945c5af756"
+            },
+            "ref": "manager_ref"
+          },
+          "service_plan": {
+            "inventory_collection_name": "service_plans",
+            "reference": {
+              "source_ref": "836cc3e0-fdee-11e8-860c-06945c5af756"
+            },
+            "ref": "manager_ref"
+          }
+        },
+        {
+          "source_ref": "9dfd9fa8-3c70-11e9-828d-0a580a8000cc",
+          "name": "amq62-basic-1dd03c03-23fb-4f26-812c-9b2766451b3a",
+          "external_url": "https://test_openshift.com:8443/console/project/default/browse/service-instances/amq62-basic-1dd03c03-23fb-4f26-812c-9b2766451b3a?tab=details",
+          "source_created_at": "2019-03-01T22:23:19Z",
+          "service_offering": {
+            "inventory_collection_name": "service_offerings",
+            "reference": {
+              "source_ref": "836cc3e0-fdee-11e8-860c-06945c5af756"
+            },
+            "ref": "manager_ref"
+          },
+          "service_plan": {
+            "inventory_collection_name": "service_plans",
+            "reference": {
+              "source_ref": "836cc3e0-fdee-11e8-860c-06945c5af756"
+            },
+            "ref": "manager_ref"
+          }
+        },
+        {
+          "source_ref": "f55a13ba-41be-11e9-828d-0a580a8000cc",
+          "name": "amq62-basic-2305d505-38fc-4ef7-9640-0e5527c90aab",
+          "external_url": "https://test_openshift.com:8443/console/project/default/browse/service-instances/amq62-basic-2305d505-38fc-4ef7-9640-0e5527c90aab?tab=details",
+          "source_created_at": "2019-03-08T16:26:42Z",
+          "service_offering": {
+            "inventory_collection_name": "service_offerings",
+            "reference": {
+              "source_ref": "836cc3e0-fdee-11e8-860c-06945c5af756"
+            },
+            "ref": "manager_ref"
+          },
+          "service_plan": {
+            "inventory_collection_name": "service_plans",
+            "reference": {
+              "source_ref": "836cc3e0-fdee-11e8-860c-06945c5af756"
+            },
+            "ref": "manager_ref"
+          }
+        }
+      ]
+    }
+  ]
+}
