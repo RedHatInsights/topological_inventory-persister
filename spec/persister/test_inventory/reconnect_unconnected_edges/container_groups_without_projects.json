@@ -1,0 +1,112 @@
+{
+  "name": "OCP",
+  "schema": {
+    "name": "Default"
+  },
+  "source": "9a874712-9a55-49ab-a46a-c823acc35503",
+  "collections": [
+    {
+      "name": "container_projects",
+      "data": [
+        {
+          "source_ref": "a56c6854-baaf-11e8-ba7e-d094660d31fb",
+          "name": "default",
+          "display_name": "Default",
+          "resource_version": "42001363",
+          "resource_timestamp": "2018-11-23 13:45:14 UTC"
+        }
+      ]
+    },
+    {
+      "name": "container_groups",
+      "data": [
+        {
+          "source_ref": "a40e2927-77b8-487e-92bb-63f32989b015",
+          "name": "kafka-1-hqtjh",
+          "resource_version": "1432020",
+          "resource_timestamp": "2018-11-23 13:45:14 UTC",
+          "container_project": {
+            "inventory_collection_name": "container_projects",
+            "reference": {
+              "name": "default"
+            },
+            "ref": "by_name"
+          },
+          "container_node": {
+            "inventory_collection_name": "container_nodes",
+            "reference": {
+              "name": "node"
+            },
+            "ref": "by_name"
+          }
+        },
+        {
+          "source_ref": "b40e2927-77b8-487e-92bb-63f32989b015",
+          "name": "kafka-2-hqtjh",
+          "resource_version": "1432020",
+          "resource_timestamp": "2018-11-23 13:45:14 UTC",
+          "container_project": {
+            "inventory_collection_name": "container_projects",
+            "reference": {
+              "name": "new_project1"
+            },
+            "ref": "by_name"
+          },
+          "container_node": {
+            "inventory_collection_name": "container_nodes",
+            "reference": {
+              "name": "node"
+            },
+            "ref": "by_name"
+          }
+        },
+        {
+          "source_ref": "c40e2927-77b8-487e-92bb-63f32989b015",
+          "name": "kafka-3-hqtjh",
+          "resource_version": "1432020",
+          "resource_timestamp": "2018-11-23 13:45:14 UTC",
+          "container_project": {
+            "inventory_collection_name": "container_projects",
+            "reference": {
+              "name": "new_project2"
+            },
+            "ref": "by_name"
+          },
+          "container_node": {
+            "inventory_collection_name": "container_nodes",
+            "reference": {
+              "name": "node"
+            },
+            "ref": "by_name"
+          }
+        }
+      ]
+    },
+    {
+      "name": "containers",
+      "data": [
+        {
+          "container_group": {
+            "inventory_collection_name": "container_groups",
+            "reference": {
+              "source_ref": "a40e2927-77b8-487e-92bb-63f32989b015"
+            },
+            "ref": "manager_ref"
+          },
+          "name": "kafka",
+          "cpu_request": 0.1
+        },
+        {
+          "container_group": {
+            "inventory_collection_name": "container_groups",
+            "reference": {
+              "source_ref": "a40e2927-77b8-487e-92bb-63f32989b015"
+            },
+            "ref": "manager_ref"
+          },
+          "name": "zookeeper"
+        }
+      ]
+    }
+  ]
+}

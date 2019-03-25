@@ -39,7 +39,9 @@ module TopologicalInventory
       attr_accessor :messaging_client_opts, :client, :metrics
 
       def process_message(client, msg)
-        TopologicalInventory::Persister::Workflow.new(load_persister(msg.payload), client, msg.payload).execute!
+        schema_class, source = load_schema_class_and_source(msg.payload)
+
+        TopologicalInventory::Persister::Workflow.new(schema_class, source, client, msg.payload).execute!
       rescue => e
         metrics.record_process(false)
         logger.error(e.message)
@@ -49,7 +51,7 @@ module TopologicalInventory
         metrics.record_process
       end
 
-      def load_persister(payload)
+      def load_schema_class_and_source(payload)
         source = Source.find_by(:uid => payload["source"])
         raise "Couldn't find source with uid #{payload["source"]}" if source.nil?
 
@@ -57,7 +59,7 @@ module TopologicalInventory
         schema_klass = schema_klass_name(schema_name).safe_constantize
         raise "Invalid schema #{schema_name}" if schema_klass.nil?
 
-        schema_klass.from_hash(payload, source)
+        return schema_klass, source
       end
 
       def schema_klass_name(name)

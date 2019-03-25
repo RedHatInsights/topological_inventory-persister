@@ -28,7 +28,7 @@ describe TopologicalInventory::Persister::Worker do
     end
 
     it "automatically fills :last_seen_at timestamp for refreshed entities and archives them in last step" do
-      expect(client).to receive(:publish_message).exactly(2).times
+      expect(client).to receive(:publish_message).exactly(4).times
 
       time_now = Time.now.utc
       time_before = Time.now.utc - 20.seconds
@@ -85,7 +85,7 @@ describe TopologicalInventory::Persister::Worker do
     end
 
     it "sweeps only inventory_collections listed in persister's :sweep_scope" do
-      expect(client).to receive(:publish_message).exactly(2).times
+      expect(client).to receive(:publish_message).exactly(4).times
 
       time_now = Time.now.utc
       time_before = Time.now.utc - 20.seconds
@@ -264,7 +264,7 @@ describe TopologicalInventory::Persister::Worker do
     end
 
     it "checks partial update failure will error out the whole refresh_state" do
-      expect(client).to receive(:publish_message).exactly(1).times
+      expect(client).to receive(:publish_message).exactly(2).times
 
       allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
 
