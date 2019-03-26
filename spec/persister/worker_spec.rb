@@ -1,7 +1,7 @@
 require "topological_inventory/persister/worker"
 
 describe TopologicalInventory::Persister::Worker do
-  let(:tenant) { Tenant.find_or_create_by!(:name => "default") }
+  let(:tenant) { Tenant.find_or_create_by!(:name => "default", :external_tenant => "external_tenant_uuid") }
   let(:vm_uuid) { "6fd5b322-e333-4bb7-bf70-b74bdf13d4c6" }
   let!(:vm) { Vm.find_or_create_by!(:tenant => tenant, :source_ref => "vm-1", :uid_ems => vm_uuid, :source => source_aws) }
   let(:ocp_source_type) { SourceType.find_or_create_by(:name => "openshift", :product_name => "OpenShift", :vendor => "Red Hat") }
