@@ -169,7 +169,7 @@ module TopologicalInventory
           refresh_state.update!(:status => :error, :error_message => "Error when saving one or more parts, sweeping can't be done.")
         else
           refresh_state.update!(:status => :sweeping)
-          InventoryRefresh::SaveInventory.sweep_inactive_records(manager, inventory_collections, refresh_state)
+          InventoryRefresh::SaveInventory.sweep_inactive_records(manager, inventory_collections, sweep_scope, refresh_state)
           refresh_state.update!(:status => :finished)
         end
       end
