@@ -138,7 +138,12 @@ module TopologicalInventory
       def sweep_inactive_records!
         refresh_state = set_sweeping_started!
 
-        refresh_state.update!(:status => :waiting_for_refresh_state_parts, :total_parts => total_parts, :sweep_scope => sweep_scope)
+        sweep_scope_refresh_state = if sweep_scope.kind_of?(Array)
+                                      sweep_scope
+                                    elsif sweep_scope.kind_of?(Hash)
+                                      sweep_scope.map {|k, v| [k, v.size]}
+                                    end
+        refresh_state.update!(:status => :waiting_for_refresh_state_parts, :total_parts => total_parts, :sweep_scope => sweep_scope_refresh_state)
 
         if total_parts == refresh_state.refresh_state_parts.count
           start_sweeping!(refresh_state)
