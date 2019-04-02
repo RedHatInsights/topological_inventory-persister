@@ -144,6 +144,128 @@ describe TopologicalInventory::Persister::Worker do
       expect(ContainerNode.archived.pluck(:source_ref)).to(
         match_array([])
       )
+
+      refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+      expect(refresh_state.status).to eq("finished")
+    end
+
+    it "sweeps subcollections with full scope" do
+      expect(client).to receive(:publish_message).exactly(2).times
+
+      time_now = Time.now.utc
+      time_before = Time.now.utc - 20.seconds
+      time_after  = Time.now.utc + 2.hours
+
+      cg1 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "a40e2927-77b8-487e-92bb-63f32989b015")
+      cg2 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "2", :last_seen_at => time_before)
+      cg3 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "3", :last_seen_at => time_now)
+      cg4 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "4")
+      cg6 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "6", :last_seen_at => time_after)
+      c1 = Container.create!(:tenant => tenant, :container_group => cg1, :name => "alertmanager")
+      c2 = Container.create!(:tenant => tenant, :container_group => cg1, :name => "name_2")
+      c3 = Container.create!(:tenant => tenant, :container_group => cg3, :name => "name_3")
+      c4 = Container.create!(:tenant => tenant, :container_group => cg6, :name => "name_4", :last_seen_at => time_after)
+      tag1 = Tag.create(:tenant => tenant, :name => "tag1", :value => "tag1_value")
+      tag3 = Tag.create(:tenant => tenant, :name => "tag3", :value => "tag3_value")
+      _ctag1 = ContainerGroupTag.create!(:container_group => cg1, :tag => tag1)
+      _ctag2 = ContainerGroupTag.create!(:container_group => cg1, :tag => tag3)
+      _ctag3 = ContainerGroupTag.create!(:container_group => cg3, :tag => tag3)
+      _ctag4 = ContainerGroupTag.create!(:container_group => cg6, :tag => tag3, :last_seen_at => time_after)
+
+      new_cg_source_ref  = "b40e2927-77b8-487e-92bb-63f32989b015"
+      new_container_name = "config-reloader"
+      new_tag_name = "tag2"
+
+      # Refresh first and second part and mark :last_seen_at
+      refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+      refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+      # Send sweep all non marked :container_groups
+      refresh(client, ["mark_and_sweep", "sweep_container_groups.json"])
+
+      new_cg        = ContainerGroup.find_by(:source_ref => new_cg_source_ref)
+      new_tag       = Tag.find_by(:name => new_tag_name)
+
+      expect(ContainerGroup.active.pluck(:source_ref)).to(
+        match_array([cg1.source_ref, new_cg_source_ref, cg6.source_ref])
+      )
+      expect(ContainerGroup.archived.pluck(:source_ref)).to(
+        match_array([cg2.source_ref, cg3.source_ref, cg4.source_ref])
+      )
+
+      expect(Container.active.pluck(:name)).to(
+        match_array([c1.name, new_container_name, c4.name])
+      )
+      expect(Container.archived.pluck(:name)).to(
+        match_array([c2.name, c3.name])
+      )
+
+      expect(ContainerGroupTag.includes(:container_group, :tag).map {|x| [x.container_group.source_ref, x.tag.name]}).to(
+        match_array([[cg1.source_ref, tag1.name], [new_cg.source_ref, new_tag.name], [cg6.source_ref, tag3.name]])
+      )
+
+      refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+      expect(refresh_state.status).to eq("finished")
+    end
+
+    it "sweeps subcollections with targeted scope" do
+      expect(client).to receive(:publish_message).exactly(2).times
+
+      time_now = Time.now.utc
+      time_before = Time.now.utc - 20.seconds
+      time_after  = Time.now.utc + 2.hours
+
+      cg1 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "a40e2927-77b8-487e-92bb-63f32989b015")
+      cg2 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "2", :last_seen_at => time_before)
+      cg3 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "3", :last_seen_at => time_now)
+      cg4 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "4")
+      cg6 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "6", :last_seen_at => time_after)
+      c1 = Container.create!(:tenant => tenant, :container_group => cg1, :name => "alertmanager")
+      c2 = Container.create!(:tenant => tenant, :container_group => cg1, :name => "name_2")
+      c3 = Container.create!(:tenant => tenant, :container_group => cg3, :name => "name_3")
+      c4 = Container.create!(:tenant => tenant, :container_group => cg6, :name => "name_4", :last_seen_at => time_after)
+      tag1 = Tag.create(:tenant => tenant, :name => "tag1", :value => "tag1_value")
+      tag3 = Tag.create(:tenant => tenant, :name => "tag3", :value => "tag3_value")
+      _ctag1 = ContainerGroupTag.create!(:container_group => cg1, :tag => tag1)
+      _ctag2 = ContainerGroupTag.create!(:container_group => cg1, :tag => tag3)
+      _ctag3 = ContainerGroupTag.create!(:container_group => cg3, :tag => tag3)
+      _ctag4 = ContainerGroupTag.create!(:container_group => cg6, :tag => tag3, :last_seen_at => time_after)
+
+      new_cg_source_ref  = "b40e2927-77b8-487e-92bb-63f32989b015"
+      new_container_name = "config-reloader"
+      new_tag_name = "tag2"
+
+      # Refresh first and second part and mark :last_seen_at
+      refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+      refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+      # Send sweep all non marked :container_groups
+      refresh(client, ["mark_and_sweep", "sweep_targeted_container_groups.json"])
+
+      new_cg        = ContainerGroup.find_by(:source_ref => new_cg_source_ref)
+      new_tag       = Tag.find_by(:name => new_tag_name)
+
+      expect(ContainerGroup.active.pluck(:source_ref)).to(
+        match_array([cg1.source_ref, cg3.source_ref, new_cg_source_ref, cg6.source_ref, cg2.source_ref, cg4.source_ref])
+      )
+      expect(ContainerGroup.archived.pluck(:source_ref)).to(
+        match_array([])
+      )
+
+      expect(Container.active.pluck(:name)).to(
+        match_array([c1.name, c3.name, new_container_name, c4.name])
+      )
+      expect(Container.archived.pluck(:name)).to(
+        match_array([c2.name])
+      )
+
+      # _ctag2 should be deleted
+      expect(ContainerGroupTag.includes(:container_group, :tag).map {|x| [x.container_group.source_ref, x.tag.name]}).to(
+        match_array([[cg1.source_ref, tag1.name], [cg3.source_ref, tag3.name], [new_cg.source_ref, new_tag.name], [cg6.source_ref, tag3.name]])
+      )
+
+      refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+      expect(refresh_state.status).to eq("finished")
     end
 
     it "checks partial update failure will error out the whole refresh_state" do
@@ -188,6 +310,120 @@ describe TopologicalInventory::Persister::Worker do
       expect(ContainerGroup.archived.pluck(:source_ref)).to(
         match_array([])
       )
+    end
+
+    context "with empty scope" do
+      before :each do
+        expect(client).to receive(:publish_message).exactly(2).times
+        allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
+
+        refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+        refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+      end
+
+      it "checks nil scope doesn't sweep anything" do
+        refresh(client, ["mark_and_sweep", "empty_sweep_format/empty1.json"])
+
+        expect(ContainerGroup.active.count).to eq(2)
+        expect(Container.active.count).to eq(2)
+        expect(ContainerGroupTag.count).to eq(2)
+        expect(Tag.count).to eq(2)
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to eq("finished")
+      end
+
+      it "checks empty array scope doesn't sweep anything" do
+        refresh(client, ["mark_and_sweep", "empty_sweep_format/empty2.json"])
+
+        expect(ContainerGroup.active.count).to eq(2)
+        expect(Container.active.count).to eq(2)
+        expect(ContainerGroupTag.count).to eq(2)
+        expect(Tag.count).to eq(2)
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to eq("finished")
+      end
+
+      it "checks empty hash scope doesn't sweep anything" do
+        refresh(client, ["mark_and_sweep", "empty_sweep_format/empty3.json"])
+
+        expect(ContainerGroup.active.count).to eq(2)
+        expect(Container.active.count).to eq(2)
+        expect(ContainerGroupTag.count).to eq(2)
+        expect(Tag.count).to eq(2)
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to eq("finished")
+      end
+
+      it "checks missing sweep scope doesn't change anything" do
+        refresh(client, ["mark_and_sweep", "empty_sweep_format/empty4.json"])
+
+        expect(ContainerGroup.active.count).to eq(2)
+        expect(Container.active.count).to eq(2)
+        expect(ContainerGroupTag.count).to eq(2)
+        expect(Tag.count).to eq(2)
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to eq("finished")
+      end
+    end
+
+    context "checks sweep fails when sending bad sweep scope format" do
+      it "checks bad array format" do
+        pending("Persister deserialization is not part of the workflow, therefore it fails a level up")
+
+        expect(client).to receive(:publish_message).exactly(2).times
+        allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
+
+        refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+        refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+        # Send persister with total_parts = XY, that will cause sweeping all tables having :last_seen_on column
+        refresh(client, ["mark_and_sweep", "bad_sweep_format/bad1.json"])
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to(eq("error"))
+        expect(refresh_state.error_message).to(include("Error while sweeping: Allowed format of sweep scope is Array<String> or Hash{String => Hash},"))
+        expect(refresh_state.refresh_state_parts.where(:status => :error).count).to(eq(0))
+      end
+
+      it "checks bad hash format" do
+        pending("Persister deserialization is not part of the workflow, therefore it fails a level up")
+
+        expect(client).to receive(:publish_message).exactly(2).times
+        allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
+
+        refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+        refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+        # Send persister with total_parts = XY, that will cause sweeping all tables having :last_seen_on column
+        refresh(client, ["mark_and_sweep", "bad_sweep_format/bad2.json"])
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to(eq("error"))
+        expect(refresh_state.error_message).to(include("Error while sweeping: Allowed format of sweep scope is Array<String> or Hash{String => Hash},"))
+        expect(refresh_state.refresh_state_parts.where(:status => :error).count).to(eq(0))
+      end
+
+      it "checks bad string format" do
+        pending("Persister deserialization is not part of the workflow, therefore it fails a level up")
+
+        expect(client).to receive(:publish_message).exactly(2).times
+        allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
+
+        refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+        refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+        # Send persister with total_parts = XY, that will cause sweeping all tables having :last_seen_on column
+        refresh(client, ["mark_and_sweep", "bad_sweep_format/bad3.json"])
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to(eq("error"))
+        expect(refresh_state.error_message).to(include("Error while sweeping: Allowed format of sweep scope is Array<String> or Hash{String => Hash},"))
+        expect(refresh_state.refresh_state_parts.where(:status => :error).count).to(eq(0))
+      end
     end
 
     it "checks sweep fails after hundred tries, waiting for all parts to be finished" do
