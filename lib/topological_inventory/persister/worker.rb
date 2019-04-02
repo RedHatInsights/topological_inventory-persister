@@ -33,6 +33,7 @@ module TopologicalInventory
         logger.error(e.backtrace.join("\n"))
       ensure
         client&.close
+        metrics&.stop_server
       end
 
       private

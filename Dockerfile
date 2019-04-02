@@ -33,5 +33,7 @@ RUN source /opt/rh/rh-postgresql10/enable && \
 RUN chgrp -R 0 $WORKDIR && \
     chmod -R g=u $WORKDIR
 
+EXPOSE 9394
+
 ENTRYPOINT ["entrypoint"]
 CMD ["run_persister"]
