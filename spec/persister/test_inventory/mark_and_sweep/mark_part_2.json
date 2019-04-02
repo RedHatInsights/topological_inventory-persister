@@ -30,6 +30,91 @@
           }
         }
       ]
+    },
+    {
+      "name": "containers",
+      "data": [
+        {
+          "container_group": {
+            "inventory_collection_name": "container_groups",
+            "reference": {
+              "source_ref": "a40e2927-77b8-487e-92bb-63f32989b015"
+            },
+            "ref": "manager_ref"
+          },
+          "container_image": {
+            "inventory_collection_name": "container_images",
+            "reference": {
+              "source_ref": "registry.reg-aws.openshift.com:443/openshift3/prometheus-alertmanager:v3.11"
+            },
+            "ref": "manager_ref"
+          },
+          "name": "alertmanager",
+          "memory_request": 209715200,
+          "resource_timestamp": "2019-04-02 10:01:32 UTC"
+        },
+        {
+          "container_group": {
+            "inventory_collection_name": "container_groups",
+            "reference": {
+              "source_ref": "b40e2927-77b8-487e-92bb-63f32989b015"
+            },
+            "ref": "manager_ref"
+          },
+          "container_image": {
+            "inventory_collection_name": "container_images",
+            "reference": {
+              "source_ref": "registry.reg-aws.openshift.com:443/openshift3/ose-configmap-reloader:v3.11"
+            },
+            "ref": "manager_ref"
+          },
+          "name": "config-reloader",
+          "cpu_limit": 0.005,
+          "cpu_request": 0.005,
+          "memory_limit": 10485760,
+          "memory_request": 10485760,
+          "resource_timestamp": "2019-04-02 10:01:32 UTC"
+        }
+      ]
+    },
+    {
+      "name": "container_group_tags",
+      "data": [
+        {
+          "container_group": {
+            "inventory_collection_name": "container_groups",
+            "reference": {
+              "source_ref": "a40e2927-77b8-487e-92bb-63f32989b015"
+            },
+            "ref": "manager_ref"
+          },
+          "tag": {
+            "inventory_collection_name": "tags",
+            "reference": {
+              "name": "tag1",
+              "value": "tag1_value"
+            },
+            "ref": "manager_ref"
+          }
+        },
+        {
+          "container_group": {
+            "inventory_collection_name": "container_groups",
+            "reference": {
+              "source_ref": "b40e2927-77b8-487e-92bb-63f32989b015"
+            },
+            "ref": "manager_ref"
+          },
+          "tag": {
+            "inventory_collection_name": "tags",
+            "reference": {
+              "name": "tag2",
+              "value": "tag2_value"
+            },
+            "ref": "manager_ref"
+          }
+        }
+      ]
     }
   ]
 }

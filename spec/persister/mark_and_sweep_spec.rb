@@ -146,6 +146,119 @@ describe TopologicalInventory::Persister::Worker do
       )
     end
 
+    it "sweeps subcollections with full scope" do
+      expect(client).to receive(:publish_message).exactly(2).times
+
+      time_now = Time.now.utc
+      time_before = Time.now.utc - 20.seconds
+      time_after  = Time.now.utc + 2.hours
+
+      cg1 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "a40e2927-77b8-487e-92bb-63f32989b015")
+      cg2 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "2", :last_seen_at => time_before)
+      cg3 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "3", :last_seen_at => time_now)
+      cg4 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "4")
+      cg6 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "6", :last_seen_at => time_after)
+      c1 = Container.create!(:tenant => tenant, :container_group => cg1, :name => "alertmanager")
+      c2 = Container.create!(:tenant => tenant, :container_group => cg1, :name => "name_2")
+      c3 = Container.create!(:tenant => tenant, :container_group => cg3, :name => "name_3")
+      c4 = Container.create!(:tenant => tenant, :container_group => cg6, :name => "name_4", :last_seen_at => time_after)
+      tag1 = Tag.create(:tenant => tenant, :name => "tag1", :value => "tag1_value")
+      tag3 = Tag.create(:tenant => tenant, :name => "tag3", :value => "tag3_value")
+      _ctag1 = ContainerGroupTag.create!(:container_group => cg1, :tag => tag1)
+      _ctag2 = ContainerGroupTag.create!(:container_group => cg1, :tag => tag3)
+      _ctag3 = ContainerGroupTag.create!(:container_group => cg3, :tag => tag3)
+      _ctag4 = ContainerGroupTag.create!(:container_group => cg6, :tag => tag3, :last_seen_at => time_after)
+
+      new_cg_source_ref  = "b40e2927-77b8-487e-92bb-63f32989b015"
+      new_container_name = "config-reloader"
+      new_tag_name = "tag2"
+
+      # Refresh first and second part and mark :last_seen_at
+      refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+      refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+      # Send sweep all non marked :container_groups
+      refresh(client, ["mark_and_sweep", "sweep_container_groups.json"])
+
+      new_cg        = ContainerGroup.find_by(:source_ref => new_cg_source_ref)
+      new_tag       = Tag.find_by(:name => new_tag_name)
+
+      expect(ContainerGroup.active.pluck(:source_ref)).to(
+        match_array([cg1.source_ref, new_cg_source_ref, cg6.source_ref])
+      )
+      expect(ContainerGroup.archived.pluck(:source_ref)).to(
+        match_array([cg2.source_ref, cg3.source_ref, cg4.source_ref])
+      )
+
+      expect(Container.active.pluck(:name)).to(
+        match_array([c1.name, new_container_name, c4.name])
+      )
+      expect(Container.archived.pluck(:name)).to(
+        match_array([c2.name, c3.name])
+      )
+
+      expect(ContainerGroupTag.includes(:container_group, :tag).map {|x| [x.container_group.source_ref, x.tag.name]}).to(
+        match_array([[cg1.source_ref, tag1.name], [new_cg.source_ref, new_tag.name], [cg6.source_ref, tag3.name]])
+      )
+    end
+
+    it "sweeps subcollections with targeted scope" do
+      expect(client).to receive(:publish_message).exactly(2).times
+
+      time_now = Time.now.utc
+      time_before = Time.now.utc - 20.seconds
+      time_after  = Time.now.utc + 2.hours
+
+      cg1 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "a40e2927-77b8-487e-92bb-63f32989b015")
+      cg2 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "2", :last_seen_at => time_before)
+      cg3 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "3", :last_seen_at => time_now)
+      cg4 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "4")
+      cg6 = ContainerGroup.create!(:source => source, :tenant => tenant, :source_ref => "6", :last_seen_at => time_after)
+      c1 = Container.create!(:tenant => tenant, :container_group => cg1, :name => "alertmanager")
+      c2 = Container.create!(:tenant => tenant, :container_group => cg1, :name => "name_2")
+      c3 = Container.create!(:tenant => tenant, :container_group => cg3, :name => "name_3")
+      c4 = Container.create!(:tenant => tenant, :container_group => cg6, :name => "name_4", :last_seen_at => time_after)
+      tag1 = Tag.create(:tenant => tenant, :name => "tag1", :value => "tag1_value")
+      tag3 = Tag.create(:tenant => tenant, :name => "tag3", :value => "tag3_value")
+      _ctag1 = ContainerGroupTag.create!(:container_group => cg1, :tag => tag1)
+      _ctag2 = ContainerGroupTag.create!(:container_group => cg1, :tag => tag3)
+      _ctag3 = ContainerGroupTag.create!(:container_group => cg3, :tag => tag3)
+      _ctag4 = ContainerGroupTag.create!(:container_group => cg6, :tag => tag3, :last_seen_at => time_after)
+
+      new_cg_source_ref  = "b40e2927-77b8-487e-92bb-63f32989b015"
+      new_container_name = "config-reloader"
+      new_tag_name = "tag2"
+
+      # Refresh first and second part and mark :last_seen_at
+      refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+      refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+      # Send sweep all non marked :container_groups
+      refresh(client, ["mark_and_sweep", "sweep_targeted_container_groups.json"])
+
+      new_cg        = ContainerGroup.find_by(:source_ref => new_cg_source_ref)
+      new_tag       = Tag.find_by(:name => new_tag_name)
+
+      expect(ContainerGroup.active.pluck(:source_ref)).to(
+        match_array([cg1.source_ref, cg3.source_ref, new_cg_source_ref, cg6.source_ref, cg2.source_ref, cg4.source_ref])
+      )
+      expect(ContainerGroup.archived.pluck(:source_ref)).to(
+        match_array([])
+      )
+
+      expect(Container.active.pluck(:name)).to(
+        match_array([c1.name, c3.name, new_container_name, c4.name])
+      )
+      expect(Container.archived.pluck(:name)).to(
+        match_array([c2.name])
+      )
+
+      # _ctag2 should be deleted
+      expect(ContainerGroupTag.includes(:container_group, :tag).map {|x| [x.container_group.source_ref, x.tag.name]}).to(
+        match_array([[cg1.source_ref, tag1.name], [cg3.source_ref, tag3.name], [new_cg.source_ref, new_tag.name], [cg6.source_ref, tag3.name]])
+      )
+    end
+
     it "checks partial update failure will error out the whole refresh_state" do
       expect(client).to receive(:publish_message).exactly(1).times
 
