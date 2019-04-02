@@ -144,6 +144,9 @@ describe TopologicalInventory::Persister::Worker do
       expect(ContainerNode.archived.pluck(:source_ref)).to(
         match_array([])
       )
+
+      refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+      expect(refresh_state.status).to eq("finished")
     end
 
     it "sweeps subcollections with full scope" do
@@ -200,6 +203,9 @@ describe TopologicalInventory::Persister::Worker do
       expect(ContainerGroupTag.includes(:container_group, :tag).map {|x| [x.container_group.source_ref, x.tag.name]}).to(
         match_array([[cg1.source_ref, tag1.name], [new_cg.source_ref, new_tag.name], [cg6.source_ref, tag3.name]])
       )
+
+      refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+      expect(refresh_state.status).to eq("finished")
     end
 
     it "sweeps subcollections with targeted scope" do
@@ -257,6 +263,9 @@ describe TopologicalInventory::Persister::Worker do
       expect(ContainerGroupTag.includes(:container_group, :tag).map {|x| [x.container_group.source_ref, x.tag.name]}).to(
         match_array([[cg1.source_ref, tag1.name], [cg3.source_ref, tag3.name], [new_cg.source_ref, new_tag.name], [cg6.source_ref, tag3.name]])
       )
+
+      refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+      expect(refresh_state.status).to eq("finished")
     end
 
     it "checks partial update failure will error out the whole refresh_state" do
@@ -301,6 +310,120 @@ describe TopologicalInventory::Persister::Worker do
       expect(ContainerGroup.archived.pluck(:source_ref)).to(
         match_array([])
       )
+    end
+
+    context "with empty scope" do
+      before :each do
+        expect(client).to receive(:publish_message).exactly(2).times
+        allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
+
+        refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+        refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+      end
+
+      it "checks nil scope doesn't sweep anything" do
+        refresh(client, ["mark_and_sweep", "empty_sweep_format/empty1.json"])
+
+        expect(ContainerGroup.active.count).to eq(2)
+        expect(Container.active.count).to eq(2)
+        expect(ContainerGroupTag.count).to eq(2)
+        expect(Tag.count).to eq(2)
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to eq("finished")
+      end
+
+      it "checks empty array scope doesn't sweep anything" do
+        refresh(client, ["mark_and_sweep", "empty_sweep_format/empty2.json"])
+
+        expect(ContainerGroup.active.count).to eq(2)
+        expect(Container.active.count).to eq(2)
+        expect(ContainerGroupTag.count).to eq(2)
+        expect(Tag.count).to eq(2)
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to eq("finished")
+      end
+
+      it "checks empty hash scope doesn't sweep anything" do
+        refresh(client, ["mark_and_sweep", "empty_sweep_format/empty3.json"])
+
+        expect(ContainerGroup.active.count).to eq(2)
+        expect(Container.active.count).to eq(2)
+        expect(ContainerGroupTag.count).to eq(2)
+        expect(Tag.count).to eq(2)
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to eq("finished")
+      end
+
+      it "checks missing sweep scope doesn't change anything" do
+        refresh(client, ["mark_and_sweep", "empty_sweep_format/empty4.json"])
+
+        expect(ContainerGroup.active.count).to eq(2)
+        expect(Container.active.count).to eq(2)
+        expect(ContainerGroupTag.count).to eq(2)
+        expect(Tag.count).to eq(2)
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to eq("finished")
+      end
+    end
+
+    context "checks sweep fails when sending bad sweep scope format" do
+      it "checks bad array format" do
+        pending("Persister deserialization is not part of the workflow, therefore it fails a level up")
+
+        expect(client).to receive(:publish_message).exactly(2).times
+        allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
+
+        refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+        refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+        # Send persister with total_parts = XY, that will cause sweeping all tables having :last_seen_on column
+        refresh(client, ["mark_and_sweep", "bad_sweep_format/bad1.json"])
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to(eq("error"))
+        expect(refresh_state.error_message).to(include("Error while sweeping: Allowed format of sweep scope is Array<String> or Hash{String => Hash},"))
+        expect(refresh_state.refresh_state_parts.where(:status => :error).count).to(eq(0))
+      end
+
+      it "checks bad hash format" do
+        pending("Persister deserialization is not part of the workflow, therefore it fails a level up")
+
+        expect(client).to receive(:publish_message).exactly(2).times
+        allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
+
+        refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+        refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+        # Send persister with total_parts = XY, that will cause sweeping all tables having :last_seen_on column
+        refresh(client, ["mark_and_sweep", "bad_sweep_format/bad2.json"])
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to(eq("error"))
+        expect(refresh_state.error_message).to(include("Error while sweeping: Allowed format of sweep scope is Array<String> or Hash{String => Hash},"))
+        expect(refresh_state.refresh_state_parts.where(:status => :error).count).to(eq(0))
+      end
+
+      it "checks bad string format" do
+        pending("Persister deserialization is not part of the workflow, therefore it fails a level up")
+
+        expect(client).to receive(:publish_message).exactly(2).times
+        allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
+
+        refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+        refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+        # Send persister with total_parts = XY, that will cause sweeping all tables having :last_seen_on column
+        refresh(client, ["mark_and_sweep", "bad_sweep_format/bad3.json"])
+
+        refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+        expect(refresh_state.status).to(eq("error"))
+        expect(refresh_state.error_message).to(include("Error while sweeping: Allowed format of sweep scope is Array<String> or Hash{String => Hash},"))
+        expect(refresh_state.refresh_state_parts.where(:status => :error).count).to(eq(0))
+      end
     end
 
     it "checks sweep fails after hundred tries, waiting for all parts to be finished" do
