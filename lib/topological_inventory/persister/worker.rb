@@ -2,6 +2,7 @@ require "inventory_refresh"
 require "manageiq-messaging"
 require "topological_inventory/persister/logging"
 require "topological_inventory/persister/workflow"
+require "topological_inventory/persister/metrics"
 require "topological_inventory/schema"
 
 module TopologicalInventory
@@ -13,6 +14,7 @@ module TopologicalInventory
         self.messaging_client_opts = default_messaging_opts.merge(messaging_client_opts)
 
         InventoryRefresh.logger = logger
+        self.metrics = TopologicalInventory::Persister::Metrics.new
       end
 
       def run
@@ -22,25 +24,31 @@ module TopologicalInventory
         logger.info("Topological Inventory Persister started...")
 
         client.subscribe_messages(queue_opts.merge(:max_bytes => 500000)) do |messages|
-          messages.each { |msg| process_message(client, msg) }
+          messages.each do |msg|
+            metrics.record_process_timing { process_message(client, msg) }
+          end
         end
       rescue => e
         logger.error(e.message)
         logger.error(e.backtrace.join("\n"))
       ensure
         client&.close
+        metrics&.stop_server
       end
 
       private
 
-      attr_accessor :messaging_client_opts, :client
+      attr_accessor :messaging_client_opts, :client, :metrics
 
       def process_message(client, msg)
         TopologicalInventory::Persister::Workflow.new(load_persister(msg.payload), client, msg.payload).execute!
       rescue => e
+        metrics.record_process(false)
         logger.error(e.message)
         logger.error(e.backtrace.join("\n"))
         nil
+      else
+        metrics.record_process
       end
 
       def load_persister(payload)
