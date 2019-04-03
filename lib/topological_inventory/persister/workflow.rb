@@ -35,7 +35,6 @@ module TopologicalInventory
       def define_refresh_state_ics
         refresh_states_inventory_collection = ::InventoryRefresh::InventoryCollection.new(
           :manager_ref                 => [:uuid],
-          :saver_strategy              => :concurrent_safe_batch,
           :parent                      => manager,
           :association                 => :refresh_states,
           :create_only                 => true,
@@ -49,7 +48,6 @@ module TopologicalInventory
 
         refresh_state_parts_inventory_collection = ::InventoryRefresh::InventoryCollection.new(
           :manager_ref                 => %i(refresh_state uuid),
-          :saver_strategy              => :concurrent_safe_batch,
           :parent                      => manager,
           :association                 => :refresh_state_parts,
           :create_only                 => true,
