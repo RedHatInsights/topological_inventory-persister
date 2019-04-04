@@ -475,5 +475,24 @@ describe TopologicalInventory::Persister::Worker do
         match_array([])
       )
     end
+
+    it "checks sweeping doesn't fail when we remove the refresh state" do
+      expect(client).to receive(:publish_message).exactly(3).times
+
+      # Refresh first and second part and mark :last_seen_at
+      refresh(client, ["mark_and_sweep", "mark_part_1.json"])
+      refresh(client, ["mark_and_sweep", "mark_part_2.json"])
+
+      refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+      # Remove the refresh state
+      refresh_state.destroy!
+
+      # Send sweep all non marked :container_groups
+      refresh(client, ["mark_and_sweep", "sweep_targeted_container_groups.json"])
+
+      refresh_state = source.refresh_states.find_by(:uuid => refresh_state_uuid)
+      # The refresh state will be upserted again and it will timeout on max sweep tries
+      expect(refresh_state.status).to eq("waiting_for_refresh_state_parts")
+    end
   end
 end
