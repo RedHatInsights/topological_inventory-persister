@@ -132,6 +132,13 @@ module TopologicalInventory
         )
       end
 
+      def update(record, data)
+        # Using this instead of record.update or record.update_attributes, because the queries are firing several Exists
+        # queries on Source, for some reason. We don't need to check for exists. If it doesn't exist the foreign
+        # key constraint will be fired.
+        record.class.where(:id => record.id).update_all(data)
+      end
+
       # Sweeps inactive records based on :last_seen_at attribute
       def sweep_inactive_records!
         refresh_state = set_sweeping_started!
@@ -141,7 +148,12 @@ module TopologicalInventory
                                     elsif sweep_scope.kind_of?(Hash)
                                       sweep_scope.map {|k, v| [k, v.size]}
                                     end
-        refresh_state.update!(:status => :waiting_for_refresh_state_parts, :total_parts => total_parts, :sweep_scope => sweep_scope_refresh_state)
+        update(
+          refresh_state,
+          :status      => :waiting_for_refresh_state_parts,
+          :total_parts => total_parts,
+          :sweep_scope => sweep_scope_refresh_state
+        )
 
         if total_parts == refresh_state.refresh_state_parts.count
           start_sweeping!(refresh_state)
@@ -169,11 +181,11 @@ module TopologicalInventory
         error_count = refresh_state.refresh_state_parts.where(:status => :error).count
 
         if error_count.positive?
-          refresh_state.update!(:status => :error, :error_message => "Error when saving one or more parts, sweeping can't be done.")
+          update(refresh_state, :status => :error, :error_message => "Error when saving one or more parts, sweeping can't be done.")
         else
-          refresh_state.update!(:status => :sweeping)
+          update(refresh_state, :status => :sweeping)
           InventoryRefresh::SaveInventory.sweep_inactive_records(manager, inventory_collections, sweep_scope, refresh_state)
-          refresh_state.update!(:status => :finished)
+          update(refresh_state, :status => :finished)
         end
       end
 
@@ -181,12 +193,13 @@ module TopologicalInventory
         sweep_retry_count = refresh_state.sweep_retry_count + 1
 
         if sweep_retry_count > sweep_retry_count_limit
-          refresh_state.update!(
+          update(
+            refresh_state,
             :status        => :error,
             :error_message => "Sweep retry count limit of #{sweep_retry_count_limit} was reached."
           )
         else
-          refresh_state.update!(:status => :waiting_for_refresh_state_parts, :sweep_retry_count => sweep_retry_count)
+          update(refresh_state, :status => :waiting_for_refresh_state_parts, :sweep_retry_count => sweep_retry_count)
           requeue_sweeping!
         end
       end
