@@ -161,7 +161,7 @@ module TopologicalInventory
           wait_for_sweeping!(refresh_state)
         end
       rescue StandardError => e
-        refresh_state.update!(:status => :error, :error_message => "Error while sweeping: #{e.message.truncate(150)}")
+        update(refresh_state, :status => :error, :error_message => "Error while sweeping: #{e.message.truncate(150)}")
 
         raise(e)
       end
