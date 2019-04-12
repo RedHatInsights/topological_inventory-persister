@@ -237,11 +237,12 @@ module TopologicalInventory
       end
 
       def requeue_unconnected_edges(persister)
-        logger.info("Re-queuing unconnected edges...")
+        data = persister.to_hash
+        logger.info("Re-queuing unconnected edges #{data}...")
         messaging_client.publish_message(
           :service => "platform.topological-inventory.persister",
           :message => "save_inventory",
-          :payload => persister.to_hash,
+          :payload => data,
         )
       end
 
