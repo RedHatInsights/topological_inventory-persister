@@ -23,10 +23,8 @@ module TopologicalInventory
 
         logger.info("Topological Inventory Persister started...")
 
-        client.subscribe_messages(queue_opts.merge(:max_bytes => 500000)) do |messages|
-          messages.each do |msg|
-            metrics.record_process_timing { process_message(client, msg) }
-          end
+        client.subscribe_topic(queue_opts) do |msg|
+          metrics.record_process_timing { process_message(client, msg) }
         end
       rescue => e
         logger.error(e.message)
@@ -68,7 +66,8 @@ module TopologicalInventory
 
       def queue_opts
         {
-          :service => "platform.topological-inventory.persister",
+          :service     => "platform.topological-inventory.persister",
+          :persist_ref => "persister_worker"
         }
       end
 
