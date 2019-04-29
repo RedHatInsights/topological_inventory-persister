@@ -7,21 +7,16 @@ describe TopologicalInventory::Persister::Worker do
   let(:tenant) { Tenant.find_or_create_by!(:name => "default", :external_tenant => "external_tenant_uuid") }
   let(:vm_uuid) { "6fd5b322-e333-4bb7-bf70-b74bdf13d4c6" }
   let!(:vm) { Vm.find_or_create_by!(:tenant => tenant, :source_ref => "vm-1", :uid_ems => vm_uuid, :source => source_aws) }
-  let(:ocp_source_type) { SourceType.find_or_create_by(:name => "openshift", :product_name => "OpenShift", :vendor => "Red Hat") }
-  let(:aws_source_type) { SourceType.find_or_create_by(:name => "amazon", :product_name => "Amazon Web Services", :vendor => "Amazon") }
   let(:client) { double(:client) }
   let(:test_inventory_dir) { Pathname.new(__dir__).join("test_inventory") }
   let!(:source) do
     Source.find_or_create_by!(
-      :tenant      => tenant,
-      :source_type => ocp_source_type,
-      :name        => "OCP",
-      :uid         => "9a874712-9a55-49ab-a46a-c823acc35503",
+      :tenant => tenant, :uid => "9a874712-9a55-49ab-a46a-c823acc35503",
     )
   end
   let(:source_aws) do
     Source.find_or_create_by!(
-      :tenant => tenant, :source_type => aws_source_type, :name => "AWS", :uid => "189d944b-93c3-4aea-87f8-846a8e7573de"
+      :tenant => tenant, :uid => "189d944b-93c3-4aea-87f8-846a8e7573de"
     )
   end
   let(:refresh_state_uuid) { "3022848a-b70f-46a3-9c7a-ee7f8009e90a" }
@@ -165,8 +160,8 @@ describe TopologicalInventory::Persister::Worker do
       c2 = Container.create!(:tenant => tenant, :container_group => cg1, :name => "name_2")
       c3 = Container.create!(:tenant => tenant, :container_group => cg3, :name => "name_3")
       c4 = Container.create!(:tenant => tenant, :container_group => cg6, :name => "name_4", :last_seen_at => time_after)
-      tag1 = Tag.create(:tenant => tenant, :name => "tag1", :value => "tag1_value")
-      tag3 = Tag.create(:tenant => tenant, :name => "tag3", :value => "tag3_value")
+      tag1 = Tag.create(:tenant => tenant, :namespace => "openshift", :name => "tag1", :value => "tag1_value")
+      tag3 = Tag.create(:tenant => tenant, :namespace => "openshift", :name => "tag3", :value => "tag3_value")
       _ctag1 = ContainerGroupTag.create!(:container_group => cg1, :tag => tag1)
       _ctag2 = ContainerGroupTag.create!(:container_group => cg1, :tag => tag3)
       _ctag3 = ContainerGroupTag.create!(:container_group => cg3, :tag => tag3)
