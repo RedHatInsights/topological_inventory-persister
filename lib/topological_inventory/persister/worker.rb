@@ -40,13 +40,26 @@ module TopologicalInventory
 
       def process_message(client, msg)
         TopologicalInventory::Persister::Workflow.new(load_persister(msg.payload), client, msg.payload).execute!
+      rescue PG::ConnectionBad, Kafka::DeliveryFailed, Kafka::ConnectionError => e
+        log_err_and_send_metric(e)
+        raise
+      rescue ActiveRecord::StatementInvalid => e
+        log_err_and_send_metric(e)
+
+        if e.message =~ /^PG::UnableToSend/
+          raise
+        end
       rescue => e
-        metrics.record_process(false)
-        logger.error(e.message)
-        logger.error(e.backtrace.join("\n"))
+        log_err_and_send_metric(e)
         nil
       else
         metrics.record_process
+      end
+
+      def log_err_and_send_metric(e)
+        metrics.record_process(false)
+        logger.error("#{e.class}:  #{e.message}")
+        logger.error(e.backtrace.join("\n"))
       end
 
       def load_persister(payload)
