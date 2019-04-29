@@ -92,7 +92,8 @@
             "inventory_collection_name": "tags",
             "reference": {
               "name": "tag1",
-              "value": "tag1_value"
+              "value": "tag1_value",
+              "namespace": "openshift"
             },
             "ref": "manager_ref"
           }
@@ -109,7 +110,8 @@
             "inventory_collection_name": "tags",
             "reference": {
               "name": "tag2",
-              "value": "tag2_value"
+              "value": "tag2_value",
+              "namespace": "openshift"
             },
             "ref": "manager_ref"
           }
