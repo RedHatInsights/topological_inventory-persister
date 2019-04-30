@@ -5,8 +5,10 @@ module TopologicalInventory
     class Workflow
       include Logging
 
-      def initialize(persister, messaging_client, payload)
-        @persister        = persister
+      def initialize(schema_class, source, messaging_client, payload)
+        @persister        = schema_class.from_hash(payload, source)
+        @schema_class     = schema_class
+        @source           = source
         @messaging_client = messaging_client
         # TODO(lsmola) we should be able to reconstruct the payload out of persistor? E.g. to just repeat the sweep phase
         @payload = payload
@@ -22,7 +24,7 @@ module TopologicalInventory
 
       private
 
-      attr_reader :persister, :messaging_client, :payload
+      attr_reader :persister, :messaging_client, :payload, :schema_class, :source
       delegate :inventory_collections,
                :manager,
                :persist!,
@@ -103,6 +105,7 @@ module TopologicalInventory
 
         persist!
         send_changes_to_queue!
+        reconnect_unconnected_edges!(persister)
 
         upsert_refresh_state_records(:status => :finished)
       rescue StandardError => e
@@ -137,6 +140,35 @@ module TopologicalInventory
         # queries on Source, for some reason. We don't need to check for exists. If it doesn't exist the foreign
         # key constraint will be fired.
         record.class.where(:id => record.id).update_all(data)
+      end
+
+      def reconnect_unconnected_edges!(persister)
+        new_persister = new_persister(persister, reconnect_unconnected_edges_retry_count_limit)
+        unconnected_edges = false
+
+        persister.inventory_collections.each do |inventory_collection|
+          next if inventory_collection.unconnected_edges.blank?
+          unconnected_edges = true
+
+          inventory_collection.unconnected_edges.each do |unconnected_edge|
+            data = unconnected_edge.inventory_object.uuid
+            data[unconnected_edge.inventory_object_key] = unconnected_edge.inventory_object_lazy
+            data[:resource_timestamp] = unconnected_edge.inventory_object.data[:resource_timestamp]
+            data.symbolize_keys!
+
+            new_persister.send(inventory_collection.name).build_partial(data)
+          end
+        end
+
+        reconnect_unconnected_edges_loop!(new_persister) if unconnected_edges
+      end
+
+      def reconnect_unconnected_edges_loop!(new_persister)
+        if new_persister.retry_count > new_persister.retry_max
+          logger.warn("Re-queuing unconnected edges :retry_max reached.")
+        else
+          requeue_unconnected_edges(new_persister)
+        end
       end
 
       # Sweeps inactive records based on :last_seen_at attribute
@@ -204,6 +236,16 @@ module TopologicalInventory
         end
       end
 
+      def requeue_unconnected_edges(persister)
+        data = persister.to_hash
+        logger.info("Re-queuing unconnected edges #{data}...")
+        messaging_client.publish_message(
+          :service => "platform.topological-inventory.persister",
+          :message => "save_inventory",
+          :payload => data,
+        )
+      end
+
       def requeue_sweeping!
         logger.info("Re-queuing sweeping job...")
         messaging_client.publish_message(
@@ -213,8 +255,19 @@ module TopologicalInventory
         )
       end
 
+      def new_persister(old_persister, retry_max)
+        new_persister = schema_class.new(source)
+        new_persister.retry_max = retry_max if new_persister.retry_max.nil?
+        new_persister.retry_count = old_persister.retry_count.nil? ? 1 : (old_persister.retry_count + 1)
+        new_persister
+      end
+
       def sweep_retry_count_limit
         100
+      end
+
+      def reconnect_unconnected_edges_retry_count_limit
+        1
       end
     end
   end

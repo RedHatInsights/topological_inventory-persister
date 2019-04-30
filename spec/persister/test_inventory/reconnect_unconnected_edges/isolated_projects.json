@@ -1,0 +1,28 @@
+{
+  "name": "OCP",
+  "schema": {
+    "name": "Default"
+  },
+  "source": "9a874712-9a55-49ab-a46a-c823acc35503",
+  "collections": [
+    {
+      "name": "container_projects",
+      "data": [
+        {
+          "source_ref": "b56c6854-baaf-11e8-ba7e-d094660d31fb",
+          "name": "new_project1",
+          "display_name": "Default",
+          "resource_version": "42001363",
+          "resource_timestamp": "2018-11-23 13:45:14 UTC"
+        },
+        {
+          "source_ref": "c56c6854-baaf-11e8-ba7e-d094660d31fb",
+          "name": "new_project2",
+          "display_name": "Default",
+          "resource_version": "42001363",
+          "resource_timestamp": "2018-11-23 13:45:14 UTC"
+        }
+      ]
+    }
+  ]
+}

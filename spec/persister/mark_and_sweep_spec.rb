@@ -28,7 +28,7 @@ describe TopologicalInventory::Persister::Worker do
     end
 
     it "automatically fills :last_seen_at timestamp for refreshed entities and archives them in last step" do
-      expect(client).to receive(:publish_message).exactly(2).times
+      expect(client).to receive(:publish_message).exactly(4).times
 
       time_now = Time.now.utc
       time_before = Time.now.utc - 20.seconds
@@ -85,7 +85,7 @@ describe TopologicalInventory::Persister::Worker do
     end
 
     it "sweeps only inventory_collections listed in persister's :sweep_scope" do
-      expect(client).to receive(:publish_message).exactly(2).times
+      expect(client).to receive(:publish_message).exactly(4).times
 
       time_now = Time.now.utc
       time_before = Time.now.utc - 20.seconds
@@ -145,7 +145,7 @@ describe TopologicalInventory::Persister::Worker do
     end
 
     it "sweeps subcollections with full scope" do
-      expect(client).to receive(:publish_message).exactly(2).times
+      expect(client).to receive(:publish_message).exactly(4).times
 
       time_now = Time.now.utc
       time_before = Time.now.utc - 20.seconds
@@ -204,7 +204,7 @@ describe TopologicalInventory::Persister::Worker do
     end
 
     it "sweeps subcollections with targeted scope" do
-      expect(client).to receive(:publish_message).exactly(2).times
+      expect(client).to receive(:publish_message).exactly(4).times
 
       time_now = Time.now.utc
       time_before = Time.now.utc - 20.seconds
@@ -264,7 +264,7 @@ describe TopologicalInventory::Persister::Worker do
     end
 
     it "checks partial update failure will error out the whole refresh_state" do
-      expect(client).to receive(:publish_message).exactly(1).times
+      expect(client).to receive(:publish_message).exactly(2).times
 
       allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
 
@@ -309,7 +309,7 @@ describe TopologicalInventory::Persister::Worker do
 
     context "with empty scope" do
       before :each do
-        expect(client).to receive(:publish_message).exactly(2).times
+        expect(client).to receive(:publish_message).exactly(4).times
         allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
 
         refresh(client, ["mark_and_sweep", "mark_part_1.json"])
@@ -369,7 +369,7 @@ describe TopologicalInventory::Persister::Worker do
       it "checks bad array format" do
         pending("Persister deserialization is not part of the workflow, therefore it fails a level up")
 
-        expect(client).to receive(:publish_message).exactly(2).times
+        expect(client).to receive(:publish_message).exactly(4).times
         allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
 
         refresh(client, ["mark_and_sweep", "mark_part_1.json"])
@@ -387,7 +387,7 @@ describe TopologicalInventory::Persister::Worker do
       it "checks bad hash format" do
         pending("Persister deserialization is not part of the workflow, therefore it fails a level up")
 
-        expect(client).to receive(:publish_message).exactly(2).times
+        expect(client).to receive(:publish_message).exactly(4).times
         allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
 
         refresh(client, ["mark_and_sweep", "mark_part_1.json"])
@@ -405,7 +405,7 @@ describe TopologicalInventory::Persister::Worker do
       it "checks bad string format" do
         pending("Persister deserialization is not part of the workflow, therefore it fails a level up")
 
-        expect(client).to receive(:publish_message).exactly(2).times
+        expect(client).to receive(:publish_message).exactly(4).times
         allow(TopologicalInventory::Persister).to receive(:logger).and_return(::InventoryRefresh::NullLogger.new)
 
         refresh(client, ["mark_and_sweep", "mark_part_1.json"])

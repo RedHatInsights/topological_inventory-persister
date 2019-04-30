@@ -9,6 +9,10 @@ describe TopologicalInventory::Persister::Worker do
   let!(:vm) { Vm.find_or_create_by!(:tenant => tenant, :source_ref => "vm-1", :uid_ems => vm_uuid, :source => source_aws) }
   let(:client) { double(:client) }
   let(:test_inventory_dir) { Pathname.new(__dir__).join("test_inventory") }
+  let(:container_project) do
+    ContainerProject.create!(:source => source, :tenant => tenant, :source_ref => "test_project",
+                             :name   => "test_project")
+  end
   let!(:source) do
     Source.find_or_create_by!(:tenant => tenant, :uid => "9a874712-9a55-49ab-a46a-c823acc35503")
   end
@@ -26,6 +30,9 @@ describe TopologicalInventory::Persister::Worker do
 
       # There should be 1 publish call writing to persister-output-stream queue
       expect(client).to receive(:publish_message).exactly(1).times
+
+      # Create projects to a DB, otherwise call more publish_message attempting to reconnect the unconnected nodes
+      container_project
     end
 
     it "refreshes service_instances" do
@@ -60,7 +67,7 @@ describe TopologicalInventory::Persister::Worker do
         have_attributes(
           :tenant_id            => source.tenant_id,
           :source_id            => source.id,
-          :container_project_id => nil,
+          :container_project_id => container_project.id,
           :source_ref           => "807d6b84-f691-11e7-9bd4-0a46c474dfe0",
           :resource_version     => "150282475",
           :name                 => "compute-resources",
