@@ -9,6 +9,8 @@ require "rspec/core/rake_task"
 require "active_record"
 load "active_record/railties/databases.rake"
 
+Dir.glob('lib/tasks/*.rake').each { |r| import r }
+
 namespace :db do
   task :environment do
     require "topological_inventory/core/ar_helper"
