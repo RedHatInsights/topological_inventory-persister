@@ -109,7 +109,6 @@ class OpenapiGenerator
 
   def build_schema(klass_name)
     schemas[klass_name] = openapi_schema(klass_name)
-    "##{SCHEMAS_PATH}/#{klass_name}"
   end
 
   # Collects what types of reference_types are there for each inventory collection (e.g. primary, by_name, etc.)
@@ -658,46 +657,28 @@ class OpenapiGenerator
       build_references_schema(inventory_collection)
     end
 
-    (connection.tables - INTERNAL_TABLES).each do |table_name|
-      build_schema(table_name.singularize.camelize)
+    inventory_collections.each do |_key, inventory_collection|
+      build_schema(inventory_collection.model_class.to_s)
     end
 
     new_content               = openapi_contents
-    new_content["paths"]      = openapi_contents.dig("paths") #build_paths.sort.to_h
+    new_content["paths"]      = openapi_contents.dig("paths")
     new_content["components"] ||= {}
-    # new_content["components"]["schemas"]    = schemas.sort.each_with_object({})    { |(name, val), h| h[name] = val || openapi_contents["components"]["schemas"][name]    || {} }
-    new_content["components"]["schemas"] = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["schemas"][name] || {} }
-    # new_content["components"]["schemas"]    = openapi_contents.dig("components", "schemas")
+    new_content["components"]["schemas"] = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val }
     new_content["components"]["parameters"] = parameters.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["parameters"][name] || {} }
     File.write(openapi_file, JSON.pretty_generate(new_content) + "\n")
   end
 
-  INTERNAL_TABLES = [
-    "tenants", "source_types", "schema_migrations", "ar_internal_metadata", "availabilities",
-    "application_types", "authentications", "refresh_states", "refresh_state_parts", "endpoints", "sources", "tasks",
-    "applications"
-  ]
-
   GENERATOR_BLACKLIST_ATTRIBUTES         = [
     :id, :resource_timestamps, :resource_timestamps_max, :tenant_id, :source_id, :created_at, :updated_at, :last_seen_at
   ].to_set.freeze
-  GENERATOR_ALLOW_BLACKLISTED_ATTRIBUTES = {
-    :tenant_id => ['Source', 'Endpoint', 'Authentication', 'Application'].to_set.freeze
-  }
+
+  GENERATOR_ALLOW_BLACKLISTED_ATTRIBUTES = {}
+  # Format is:
+  # {
+  #   :tenant_id => ['Source', 'Endpoint', 'Authentication', 'Application'].to_set
+  # }.freeze
 end
-
-GENERATOR_ALLOWED_MODELS               = [
-  'Container', 'ContainerGroup', 'ContainerImage', 'ContainerNode', 'ContainerProject', 'ContainerTemplate', 'Flavor',
-  'OrchestrationStack', 'ServiceInstance', 'ServiceOffering', 'ServiceOfferingIcon', 'ServicePlan', 'Tag',
-  'Vm', 'Volume', 'VolumeAttachment', 'VolumeType', 'ContainerResourceQuota'
-].to_set.freeze
-GENERATOR_READ_ONLY_ATTRIBUTES         = [
-  :created_at, :updated_at, :archived_at, :last_seen_at
-].to_set.freeze
-GENERATOR_IMAGE_MEDIA_TYPE_DEFINITIONS = [
-  'IconData'
-].to_set.freeze
-
 
 $LOAD_PATH << File.expand_path("../lib", __dir__)
 require "bundler/setup"
