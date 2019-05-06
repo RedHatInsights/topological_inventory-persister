@@ -129,8 +129,15 @@ class OpenapiGenerator
 
   def openapi_schema(klass_name)
     {
-      "type"       => "object",
-      "properties" => openapi_schema_properties(klass_name),
+      "allOf" => [
+        {
+          "$ref": "#/components/schemas/InventoryObject"
+        },
+        {
+          "type"       => "object",
+          "properties" => openapi_schema_properties(klass_name),
+        }
+      ]
     }
   end
 
@@ -197,6 +204,7 @@ class OpenapiGenerator
   end
 
   def openapi_schema_properties_value(klass_name, model, key, value)
+    # TODO(lsmola) add nullable: true to all columns that do not have not null constraint?
     if key == model.primary_key
       [key, {"$ref" => "##{SCHEMAS_PATH}/ID"}]
     elsif (foreign_key = foreign_key_mapping(model)[key])
