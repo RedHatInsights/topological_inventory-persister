@@ -18,16 +18,6 @@ class OpenapiGenerator
     end.max
   end
 
-  # def rails_routes
-  #   Rails.application.routes.routes.each_with_object([]) do |route, array|
-  #     r = ActionDispatch::Routing::RouteWrapper.new(route)
-  #     next if r.internal? # Don't display rails routes
-  #     next if r.engine? # Don't care right now...
-  #
-  #     array << r
-  #   end
-  # end
-
   def openapi_file
     # TODO(lsmola) how does topo API loads the version?
     # @openapi_file ||= Pathname.new(__dir__).join("../../public/doc/openapi-3-v#{api_version}.json").to_s
@@ -41,62 +31,7 @@ class OpenapiGenerator
   end
 
   def initialize
-    # TODO(lsmola) what should be the format here?
-    # app_prefix, app_name = base_path.match(/\A(.*)\/(.*)\/v\d+.\d+\z/).captures
-    # ENV['APP_NAME'] = app_name
-    # ENV['PATH_PREFIX'] = app_prefix
-    # Rails.application.reload_routes!
-  end
-
-  def base_path
-    openapi_contents["servers"].first["variables"]["basePath"]["default"]
-  end
-
-  def applicable_rails_routes
-    rails_routes.select { |i| i.path.start_with?(base_path) }
-  end
-
-  def build_paths
-    applicable_rails_routes.each_with_object({}) do |route, expected_paths|
-      without_format     = route.path.split("(.:format)").first
-      sub_path           = without_format.split(base_path).last.sub(/:[_a-z]*id/, "{id}")
-      klass_name         = route.controller.split("/").last.camelize.singularize
-      verb               = route.verb.downcase
-      primary_collection = sub_path.split("/")[1].camelize.singularize
-
-      expected_paths[sub_path]       ||= {}
-      expected_paths[sub_path][verb] =
-        case route.action
-        when "index" then
-          openapi_list_description(klass_name, primary_collection)
-        when "show" then
-          openapi_show_description(klass_name)
-        when "destroy" then
-          openapi_destroy_description(klass_name)
-        when "create" then
-          openapi_create_description(klass_name)
-        when "update" then
-          openapi_update_description(klass_name, verb)
-        else
-          if verb == "get" && GENERATOR_IMAGE_MEDIA_TYPE_DEFINITIONS.include?(route.action.camelize)
-            openapi_show_image_media_type_description(route.action.camelize, primary_collection)
-          end
-        end
-
-      unless expected_paths[sub_path][verb]
-        # If it's not generic action but a custom method like e.g. `post "order", :to => "service_plans#order"`, we will
-        # try to take existing schema, because the description, summary, etc. are likely to be custom.
-        expected_paths[sub_path][verb] =
-          case verb
-          when "post"
-            openapi_contents.dig("paths", sub_path, verb) || openapi_create_description(klass_name)
-          when "get"
-            openapi_contents.dig("paths", sub_path, verb) || openapi_show_description(klass_name)
-          else
-            openapi_contents.dig("paths", sub_path, verb)
-          end
-      end
-    end
+    # TODO(lsmola) move the instance variable init here
   end
 
   def schemas
@@ -365,104 +300,10 @@ class OpenapiGenerator
   end
 
   def run
-    # TODO(lsmola) remove?
-    # parameters["QueryOffset"] = {
-    #   "in"          => "query",
-    #   "name"        => "offset",
-    #   "description" => "The number of items to skip before starting to collect the result set.",
-    #   "required"    => false,
-    #   "schema"      => {
-    #     "type"    => "integer",
-    #     "minimum" => 0,
-    #     "default" => 0
-    #   }
-    # }
-    #
-    # parameters["QueryLimit"] = {
-    #   "in"          => "query",
-    #   "name"        => "limit",
-    #   "description" => "The numbers of items to return per page.",
-    #   "required"    => false,
-    #   "schema"      => {
-    #     "type"    => "integer",
-    #     "minimum" => 1,
-    #     "maximum" => 1000,
-    #     "default" => 100
-    #   }
-    # }
-    #
-    # parameters["QueryFilter"] = {
-    #   "in"          => "query",
-    #   "name"        => "filter",
-    #   "description" => "Filter for querying collections.",
-    #   "required"    => false,
-    #   "style"       => "deepObject",
-    #   "explode"     => true,
-    #   "schema"      => {
-    #     "type" => "object"
-    #   }
-    # }
-    #
-    # schemas["CollectionLinks"] = {
-    #   "type" => "object",
-    #   "properties" => {
-    #     "first" => {
-    #       "type" => "string"
-    #     },
-    #     "last"  => {
-    #       "type" => "string"
-    #     },
-    #     "prev"  => {
-    #       "type" => "string"
-    #     },
-    #     "next"  => {
-    #       "type" => "string"
-    #     }
-    #   }
-    # }
-    #
-    # schemas["CollectionMetadata"] = {
-    #   "type" => "object",
-    #   "properties" => {
-    #     "count" => {
-    #       "type" => "integer"
-    #     }
-    #   }
-    # }
-    #
-    # schemas["OrderParameters"] = {
-    #   "type" => "object",
-    #   "properties" => {
-    #     "service_parameters" => {
-    #       "type" => "object",
-    #       "description" => "JSON object with provisioning parameters"
-    #     },
-    #     "provider_control_parameters" => {
-    #       "type" => "object",
-    #       "description" => "The provider specific parameters needed to provision this service. This might include namespaces, special keys"
-    #     }
-    #   }
-    # }
-    #
-    # schemas["Tagging"] = {
-    #   "type"       => "object",
-    #   "properties" => {
-    #     "tag_id" => {"$ref" => "##{SCHEMAS_PATH}/ID"},
-    #     "name"   => {"type" => "string", "readOnly" => true, "example" => "architecture"},
-    #     "value"  => {"type" => "string", "readOnly" => true, "example" => "x86_64"}
-    #   }
-    # }
-    #
-    # schemas["ID"] = {
-    #   "type"=>"string", "description"=>"ID of the resource", "pattern"=>"/^\\d+$/", "readOnly"=>true
-    # }
-
+    # TODO(lsmola) Split Inventory to Inventory & Sweeping
     schemas["Inventory"] = {
       "type":       "object",
-      "required":   [
-                      "schema",
-                      "source"
-                    ],
+      "required":   ["schema", "source"],
       "properties": {
         "name":                    {
           "type": "string"
@@ -493,125 +334,29 @@ class OpenapiGenerator
             "$ref": "#/components/schemas/InventoryCollection"
           }
         }
-      },
-      "example":    {
-        "schema":                  {
-          "name": "name"
-        },
-        "collections":             [
-                                     {
-                                       "data":              [
-                                                              {
-                                                              },
-                                                              {
-                                                              }
-                                                            ],
-                                       "name":              "name",
-                                       "all_manager_uuids": [
-                                                              "all_manager_uuids",
-                                                              "all_manager_uuids"
-                                                            ],
-                                       "partial_data":      [
-                                                              nil,
-                                                              nil
-                                                            ],
-                                       "manager_uuids":     [
-                                                              "manager_uuids",
-                                                              "manager_uuids"
-                                                            ]
-                                     },
-                                     {
-                                       "data":              [
-                                                              {
-                                                              },
-                                                              {
-                                                              }
-                                                            ],
-                                       "name":              "name",
-                                       "all_manager_uuids": [
-                                                              "all_manager_uuids",
-                                                              "all_manager_uuids"
-                                                            ],
-                                       "partial_data":      [
-                                                              nil,
-                                                              nil
-                                                            ],
-                                       "manager_uuids":     [
-                                                              "manager_uuids",
-                                                              "manager_uuids"
-                                                            ]
-                                     }
-                                   ],
-        "total_parts":             0,
-        "name":                    "name",
-        "refresh_state_uuid":      "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-        "refresh_state_part_uuid": "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
-        "source":                  {
-          "name": "Widget Adapter",
-          "id":   "d290f1ee-6c54-4b01-90e6-d701748f0851"
-        },
-        "sweep_scope":             [
-                                     "sweep_scope",
-                                     "sweep_scope"
-                                   ]
       }
     }
 
     schemas["InventoryCollection"] = {
       "type":       "object",
-      "required":   [
-                      "name"
-                    ],
+      "required":   ["name"],
       "properties": {
-        "name":              {
+        "name":         {
           "type": "string"
         },
-        "manager_uuids":     {
-          "type":  "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "all_manager_uuids": {
-          "type":  "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "data":              {
+        "data":         {
           "type":  "array",
           "items": {
             "$ref": "#/components/schemas/InventoryObject"
           }
         },
-        "partial_data":      {
+        "partial_data": {
           "type":  "array",
           "items": {
             "$ref": "#/components/schemas/InventoryObject"
           }
         }
       },
-      "example":    {
-        "data":              [
-                               {
-                               },
-                               {
-                               }
-                             ],
-        "name":              "name",
-        "all_manager_uuids": [
-                               "all_manager_uuids",
-                               "all_manager_uuids"
-                             ],
-        "partial_data":      [
-                               nil,
-                               nil
-                             ],
-        "manager_uuids":     [
-                               "manager_uuids",
-                               "manager_uuids"
-                             ]
-      }
     }
 
     schemas["InventoryObject"] = {
@@ -661,15 +406,15 @@ class OpenapiGenerator
       build_schema(inventory_collection.model_class.to_s)
     end
 
-    new_content               = openapi_contents
-    new_content["paths"]      = openapi_contents.dig("paths")
-    new_content["components"] ||= {}
-    new_content["components"]["schemas"] = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val }
+    new_content                             = openapi_contents
+    new_content["paths"]                    = openapi_contents.dig("paths")
+    new_content["components"]               ||= {}
+    new_content["components"]["schemas"]    = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val }
     new_content["components"]["parameters"] = parameters.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["parameters"][name] || {} }
     File.write(openapi_file, JSON.pretty_generate(new_content) + "\n")
   end
 
-  GENERATOR_BLACKLIST_ATTRIBUTES         = [
+  GENERATOR_BLACKLIST_ATTRIBUTES = [
     :id, :resource_timestamps, :resource_timestamps_max, :tenant_id, :source_id, :created_at, :updated_at, :last_seen_at
   ].to_set.freeze
 
