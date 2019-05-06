@@ -2,7 +2,7 @@ class OpenapiGenerator
   require 'json'
 
   PARAMETERS_PATH = "/components/parameters".freeze
-  SCHEMAS_PATH = "/components/schemas".freeze
+  SCHEMAS_PATH    = "/components/schemas".freeze
 
   def path_parts(openapi_path)
     openapi_path.split("/")[1..-1]
@@ -12,26 +12,26 @@ class OpenapiGenerator
   def api_version
     @api_version ||= Rails.application.routes.routes.each_with_object([]) do |route, array|
       matches = ActionDispatch::Routing::RouteWrapper
-                .new(route)
-                .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
+                  .new(route)
+                  .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
       array << matches[1] if matches
     end.max
   end
 
-  def rails_routes
-    Rails.application.routes.routes.each_with_object([]) do |route, array|
-      r = ActionDispatch::Routing::RouteWrapper.new(route)
-      next if r.internal? # Don't display rails routes
-      next if r.engine? # Don't care right now...
-
-      array << r
-    end
-  end
+  # def rails_routes
+  #   Rails.application.routes.routes.each_with_object([]) do |route, array|
+  #     r = ActionDispatch::Routing::RouteWrapper.new(route)
+  #     next if r.internal? # Don't display rails routes
+  #     next if r.engine? # Don't care right now...
+  #
+  #     array << r
+  #   end
+  # end
 
   def openapi_file
     # TODO(lsmola) how does topo API loads the version?
     # @openapi_file ||= Pathname.new(__dir__).join("../../public/doc/openapi-3-v#{api_version}.json").to_s
-    @openapi_file ||= Pathname.new(__dir__).join("../../public/doc/openapi-3-v0.0.2.json").to_s
+    @openapi_file ||= Pathname.new(__dir__).join("../../../topological_inventory-ingress_api/public/doc/openapi-3-v0.0.2.json").to_s
   end
 
   def openapi_contents
@@ -45,7 +45,7 @@ class OpenapiGenerator
     # app_prefix, app_name = base_path.match(/\A(.*)\/(.*)\/v\d+.\d+\z/).captures
     # ENV['APP_NAME'] = app_name
     # ENV['PATH_PREFIX'] = app_prefix
-    Rails.application.reload_routes!
+    # Rails.application.reload_routes!
   end
 
   def base_path
@@ -58,24 +58,29 @@ class OpenapiGenerator
 
   def build_paths
     applicable_rails_routes.each_with_object({}) do |route, expected_paths|
-      without_format = route.path.split("(.:format)").first
-      sub_path = without_format.split(base_path).last.sub(/:[_a-z]*id/, "{id}")
-      klass_name = route.controller.split("/").last.camelize.singularize
-      verb = route.verb.downcase
+      without_format     = route.path.split("(.:format)").first
+      sub_path           = without_format.split(base_path).last.sub(/:[_a-z]*id/, "{id}")
+      klass_name         = route.controller.split("/").last.camelize.singularize
+      verb               = route.verb.downcase
       primary_collection = sub_path.split("/")[1].camelize.singularize
 
-      expected_paths[sub_path] ||= {}
+      expected_paths[sub_path]       ||= {}
       expected_paths[sub_path][verb] =
         case route.action
-          when "index"   then openapi_list_description(klass_name, primary_collection)
-          when "show"    then openapi_show_description(klass_name)
-          when "destroy" then openapi_destroy_description(klass_name)
-          when "create"  then openapi_create_description(klass_name)
-          when "update"  then openapi_update_description(klass_name, verb)
-          else
-            if verb == "get" && GENERATOR_IMAGE_MEDIA_TYPE_DEFINITIONS.include?(route.action.camelize)
-              openapi_show_image_media_type_description(route.action.camelize, primary_collection)
-            end
+        when "index" then
+          openapi_list_description(klass_name, primary_collection)
+        when "show" then
+          openapi_show_description(klass_name)
+        when "destroy" then
+          openapi_destroy_description(klass_name)
+        when "create" then
+          openapi_create_description(klass_name)
+        when "update" then
+          openapi_update_description(klass_name, verb)
+        else
+          if verb == "get" && GENERATOR_IMAGE_MEDIA_TYPE_DEFINITIONS.include?(route.action.camelize)
+            openapi_show_image_media_type_description(route.action.camelize, primary_collection)
+          end
         end
 
       unless expected_paths[sub_path][verb]
@@ -119,35 +124,35 @@ class OpenapiGenerator
       "operationId" => "list#{primary_collection}#{klass_name.pluralize}",
       "description" => "Returns an array of #{klass_name} objects",
       "parameters"  => [
-        { "$ref" => "##{PARAMETERS_PATH}/QueryLimit"  },
-        { "$ref" => "##{PARAMETERS_PATH}/QueryOffset" },
-        { "$ref" => "##{PARAMETERS_PATH}/QueryFilter" }
+        {"$ref" => "##{PARAMETERS_PATH}/QueryLimit"},
+        {"$ref" => "##{PARAMETERS_PATH}/QueryOffset"},
+        {"$ref" => "##{PARAMETERS_PATH}/QueryFilter"}
       ],
       "responses"   => {
         "200" => {
           "description" => "#{klass_name.pluralize} collection",
           "content"     => {
             "application/json" => {
-              "schema" => { "$ref" => build_collection_schema(klass_name) }
+              "schema" => {"$ref" => build_collection_schema(klass_name)}
             }
           }
         }
       }
     }.tap do |h|
-      h["parameters"] << { "$ref" => build_parameter("ID") } if primary_collection
+      h["parameters"] << {"$ref" => build_parameter("ID")} if primary_collection
     end
   end
 
   def build_collection_schema(klass_name)
-    collection_name = "#{klass_name.pluralize}Collection"
+    collection_name          = "#{klass_name.pluralize}Collection"
     schemas[collection_name] = {
       "type"       => "object",
       "properties" => {
-        "meta"  => { "$ref" => "##{SCHEMAS_PATH}/CollectionMetadata" },
-        "links" => { "$ref" => "##{SCHEMAS_PATH}/CollectionLinks"    },
+        "meta"  => {"$ref" => "##{SCHEMAS_PATH}/CollectionMetadata"},
+        "links" => {"$ref" => "##{SCHEMAS_PATH}/CollectionLinks"},
         "data"  => {
           "type"  => "array",
-          "items" => { "$ref" => build_schema(klass_name) }
+          "items" => {"$ref" => build_schema(klass_name)}
         }
       }
     }
@@ -162,27 +167,80 @@ class OpenapiGenerator
     }
   end
 
-  def openapi_schema_properties(klass_name)
-    model = klass_name.constantize
-    require 'byebug'; byebug
-    model.columns_hash.map do |key, value|
-      unless(GENERATOR_ALLOW_BLACKLISTED_ATTRIBUTES[key.to_sym] || []).include?(klass_name)
+  def openapi_schema_properties(klass_name, only_columns = nil)
+    model        = klass_name.constantize
+    used_columns = model.columns_hash
+    used_columns = used_columns.slice(*only_columns) if only_columns
+
+    used_columns.map do |key, value|
+      unless (GENERATOR_ALLOW_BLACKLISTED_ATTRIBUTES[key.to_sym] || []).include?(klass_name)
         next if GENERATOR_BLACKLIST_ATTRIBUTES.include?(key.to_sym)
       end
+      openapi_schema_properties_value(klass_name, model, key, value)
+    end.compact.sort_by(&:first).to_h
+  end
 
-      [key, openapi_schema_properties_value(klass_name, model, key, value)]
-    end.compact.sort.to_h
+  def inventory_collections
+    return @inventory_collections_cache if @inventory_collections_cache
+
+    mock_source = Source.new(:uid => "mock", :tenant => Tenant.new(:external_tenant => "mock"))
+    schema      = TopologicalInventory::Schema::Default.new(mock_source)
+
+    @inventory_collections_cache = schema.collections
+  end
+
+  def lazy_find(klass_name, inventory_collection)
+    # "inventory_collection_name": "tags",
+    #   "reference": {
+    #   "name": "tag2",
+    #   "value": "tag2_value"
+    # },
+    #   "ref": "manager_ref"
+    # 
+
+
+    {
+      "type"       => "object",
+      "required"   => [
+        "inventory_collection_name",
+        "reference",
+        "ref"
+      ],
+      "properties" => {
+        "inventory_collection_name" => {
+          "type" => "string",
+          "enum" => [inventory_collection.name]
+        },
+        "reference"                 => lazy_find_reference(klass_name, inventory_collection),
+        "ref"                       => {
+          "type" => "string",
+          "enum" => ["manager_ref"]
+        }
+      }
+    }
+  end
+
+  def lazy_find_reference(klass_name, inventory_collection)
+    {
+      "type"       => "object",
+      "required"   => inventory_collection.manager_ref,
+      "properties" => openapi_schema_properties(klass_name, inventory_collection.manager_ref_to_cols.map(&:to_s))
+    }
   end
 
   def openapi_schema_properties_value(klass_name, model, key, value)
     if key == model.primary_key
-      {
-        "$ref" => "##{SCHEMAS_PATH}/ID"
-      }
-    elsif key.ends_with?("_id")
-      properties_value = {}
-      properties_value["$ref"] = openapi_contents.dig(*path_parts(SCHEMAS_PATH), klass_name, "properties", key, "$ref") || "##{SCHEMAS_PATH}/ID"
-      properties_value
+      [key, {"$ref" => "##{SCHEMAS_PATH}/ID"}]
+    elsif (foreign_key = foreign_key_mapping(model)[key])
+
+      # TODO(lsmola) deal with polymorphic relations, then we can allow all types of lazy_references?
+      # require 'byebug'; byebug if foreign_key.polymorphic?
+      # TODO(lsmola) ignore also the _type column
+      return if foreign_key.polymorphic?
+      inventory_collection_name      = foreign_key.table_name
+      reference_inventory_collection = inventory_collections[inventory_collection_name.to_sym]
+
+      [foreign_key.name.to_s, lazy_find(klass_name, reference_inventory_collection)]
     else
       properties_value = {
         "type" => "string"
@@ -200,7 +258,7 @@ class OpenapiGenerator
       when :jsonb
         properties_value["type"] = "object"
         ['type', 'items'].each do |property_key|
-          prop = openapi_contents.dig(*path_parts(SCHEMAS_PATH), klass_name, "properties", key, property_key)
+          prop                           = openapi_contents.dig(*path_parts(SCHEMAS_PATH), klass_name, "properties", key, property_key)
           properties_value[property_key] = prop if prop.present?
         end
       end
@@ -211,121 +269,44 @@ class OpenapiGenerator
         properties_value[property_key] = property_value if property_value
       end
 
-      properties_value.sort.to_h
+      [key, properties_value.sort.to_h]
     end
   end
 
-  def openapi_show_description(klass_name)
-    {
-      "summary"     => "Show an existing #{klass_name}",
-      "operationId" => "show#{klass_name}",
-      "description" => "Returns a #{klass_name} object",
-      "parameters"  => [{ "$ref" => build_parameter("ID") }],
-      "responses"   => {
-        "200" => {
-          "description" => "#{klass_name} info",
-          "content"     => {
-            "application/json" => {
-              "schema" => { "$ref" => build_schema(klass_name) }
-            }
-          }
-        },
-        "404" => {"description" => "Not found"}
-      }
-    }
+  # @return [Array<ActiveRecord::Reflection::BelongsToReflection">] All belongs_to associations
+  def belongs_to_associations(model_class)
+    model_class.reflect_on_all_associations.select { |x| x.kind_of?(ActiveRecord::Reflection::BelongsToReflection) }
   end
 
-  def openapi_show_image_media_type_description(klass_name, primary_collection)
-    primary_collection = nil if primary_collection == klass_name
-    {
-      "summary"     => "Show an existing #{primary_collection} #{klass_name}",
-      "operationId" => "show#{primary_collection}#{klass_name}",
-      "description" => "Returns a #{primary_collection} #{klass_name}",
-      "parameters"  => [{ "$ref" => build_parameter("ID") }],
-      "responses"   => {
-        "200" => {
-          "description" => "#{primary_collection} #{klass_name}",
-          "content"     => {
-            "image/*" => {
-              "schema" => {
-                "type"   => "string",
-                "format" => "binary"
-              }
-            }
-          }
-        },
-        "404" => {"description" => "Not found"}
-      }
-    }
+  # @return [Hash{String => Hash}] Hash with foreign_key column name mapped to association name
+  def foreign_key_to_association_mapping(model_class)
+    return {} unless model_class
+
+    (@foreign_key_to_association_mapping ||= {})[model_class] ||= belongs_to_associations(model_class).each_with_object({}) do |x, obj|
+      obj[x.foreign_key] = x.name
+    end
   end
 
-  def openapi_destroy_description(klass_name)
-    {
-      "summary"     => "Delete an existing #{klass_name}",
-      "operationId" => "delete#{klass_name}",
-      "description" => "Deletes a #{klass_name} object",
-      "parameters"  => [{ "$ref" => build_parameter("ID") }],
-      "responses"   => {
-        "204" => { "description" => "#{klass_name} deleted" },
-        "404" => { "description" => "Not found"             }
-      }
-    }
+  # @return [Hash{String => Hash}] Hash with foreign_key column name mapped to association name
+  def foreign_key_to_table_name_mapping(model_class)
+    return {} unless model_class
+
+    (@foreign_key_to_table_name_mapping ||= {})[model_class] ||= belongs_to_associations(model_class).each_with_object({}) do |x, obj|
+      obj[x.foreign_key] = x.table_name
+    end
   end
 
-  def openapi_create_description(klass_name)
-    {
-      "summary"     => "Create a new #{klass_name}",
-      "operationId" => "create#{klass_name}",
-      "description" => "Creates a #{klass_name} object",
-      "requestBody" => {
-        "content"     => {
-          "application/json" => {
-            "schema" => { "$ref" => build_schema(klass_name) }
-          }
-        },
-        "description" => "#{klass_name} attributes to create",
-        "required"    => true
-      },
-      "responses"   => {
-        "201" => {
-          "description" => "#{klass_name} creation successful",
-          "content"     => {
-            "application/json" => {
-              "schema" => {
-                "type"  => "object",
-                "items" => { "$ref" => build_schema(klass_name) }
-              }
-            }
-          }
-        }
-      }
-    }
+  # @return [Hash{String => Hash}] Hash with foreign_key column name mapped to association name
+  def foreign_key_mapping(model_class)
+    return {} unless model_class
+
+    (@foreign_key_mapping ||= {})[model_class] ||= belongs_to_associations(model_class).each_with_object({}) do |x, obj|
+      obj[x.foreign_key] = x
+    end
   end
 
-  def openapi_update_description(klass_name, verb)
-    action = verb == "patch" ? "Update" : "Replace"
-    {
-      "summary"     => "#{action} an existing #{klass_name}",
-      "operationId" => "#{action.downcase}#{klass_name}",
-      "description" => "#{action}s a #{klass_name} object",
-      "parameters"  => [
-        { "$ref" => build_parameter("ID") }
-      ],
-      "requestBody" => {
-        "content"     => {
-          "application/json" => {
-            "schema" => { "$ref" => build_schema(klass_name) }
-          }
-        },
-        "description" => "#{klass_name} attributes to update",
-        "required"    => true
-      },
-      "responses"   => {
-        "204" => { "description" => "Updated, no content" },
-        "400" => { "description" => "Bad request"         },
-        "404" => { "description" => "Not found"           }
-      }
-    }
+  def connection
+    ApplicationRecord.connection
   end
 
   def run
@@ -421,35 +402,40 @@ class OpenapiGenerator
     #   "type"=>"string", "description"=>"ID of the resource", "pattern"=>"/^\\d+$/", "readOnly"=>true
     # }
 
-    GENERATOR_ALLOWED_MODELS.each do |model_name|
-      build_schema(model_name)
+    (connection.tables - INTERNAL_TABLES).each do |table_name|
+      build_schema(table_name.singularize.camelize)
     end
 
-    new_content = openapi_contents
-    new_content["paths"] = build_paths.sort.to_h
+    new_content               = openapi_contents
+    new_content["paths"]      = openapi_contents.dig("paths") #build_paths.sort.to_h
     new_content["components"] ||= {}
-    require 'byebug'; byebug
     # new_content["components"]["schemas"]    = schemas.sort.each_with_object({})    { |(name, val), h| h[name] = val || openapi_contents["components"]["schemas"][name]    || {} }
-    new_content["components"]["schemas"]    = schemas.sort.each_with_object({})    { |(name, val), h| h[name] = val || openapi_contents["components"]["schemas"][name]    || {} }
+    new_content["components"]["schemas"] = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["schemas"][name] || {} }
     # new_content["components"]["schemas"]    = openapi_contents.dig("components", "schemas")
     new_content["components"]["parameters"] = parameters.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["parameters"][name] || {} }
     File.write(openapi_file, JSON.pretty_generate(new_content) + "\n")
   end
+
+  INTERNAL_TABLES = [
+    "tenants", "source_types", "schema_migrations", "ar_internal_metadata", "availabilities",
+    "application_types", "authentications", "refresh_states", "refresh_state_parts", "endpoints", "sources", "tasks",
+    "applications"
+  ]
+
+  GENERATOR_BLACKLIST_ATTRIBUTES         = [
+    :resource_timestamps, :resource_timestamps_max, :tenant_id, :source_id, :created_at, :updated_at, :last_seen_at
+  ].to_set.freeze
+  GENERATOR_ALLOW_BLACKLISTED_ATTRIBUTES = {
+    :tenant_id => ['Source', 'Endpoint', 'Authentication', 'Application'].to_set.freeze
+  }
 end
 
-GENERATOR_BLACKLIST_ATTRIBUTES           = [
-  :resource_timestamps, :resource_timestamps_max, :tenant_id, :source_id, :created_at, :updated_at, :last_seen_at
-].to_set.freeze
-GENERATOR_ALLOW_BLACKLISTED_ATTRIBUTES   = {
-  :tenant_id => ['Source', 'Endpoint', 'Authentication', 'Application'].to_set.freeze
-}
-
-GENERATOR_ALLOWED_MODELS = [
+GENERATOR_ALLOWED_MODELS               = [
   'Container', 'ContainerGroup', 'ContainerImage', 'ContainerNode', 'ContainerProject', 'ContainerTemplate', 'Flavor',
   'OrchestrationStack', 'ServiceInstance', 'ServiceOffering', 'ServiceOfferingIcon', 'ServicePlan', 'Tag',
   'Vm', 'Volume', 'VolumeAttachment', 'VolumeType', 'ContainerResourceQuota'
 ].to_set.freeze
-GENERATOR_READ_ONLY_ATTRIBUTES = [
+GENERATOR_READ_ONLY_ATTRIBUTES         = [
   :created_at, :updated_at, :archived_at, :last_seen_at
 ].to_set.freeze
 GENERATOR_IMAGE_MEDIA_TYPE_DEFINITIONS = [
@@ -457,13 +443,20 @@ GENERATOR_IMAGE_MEDIA_TYPE_DEFINITIONS = [
 ].to_set.freeze
 
 
-INTERNAL_TABLES= ["tenants", "source_types", "schema_migrations", "ar_internal_metadata", "availabilities",
-   "application_types"
-]
+$LOAD_PATH << File.expand_path("../lib", __dir__)
+require "bundler/setup"
+require "topological_inventory/schema/default"
+require "topological_inventory/core/ar_helper"
+
+queue_host = ENV["QUEUE_HOST"] || "localhost"
+queue_port = ENV["QUEUE_PORT"] || 9092
+
+TopologicalInventory::Core::ArHelper.database_yaml_path = Pathname.new(__dir__).join("../../config/database.yml")
+TopologicalInventory::Core::ArHelper.load_environment!
 
 namespace :openapi do
   desc "Generate the openapi.json contents"
-  task :generate => :environment do
+  task :generate do
     OpenapiGenerator.new.run
   end
 end
