@@ -402,6 +402,198 @@ class OpenapiGenerator
     #   "type"=>"string", "description"=>"ID of the resource", "pattern"=>"/^\\d+$/", "readOnly"=>true
     # }
 
+    schemas["Inventory"] = {
+      "type":       "object",
+      "required":   [
+                      "schema",
+                      "source"
+                    ],
+      "properties": {
+        "name":                    {
+          "type": "string"
+        },
+        "schema":                  {
+          "$ref": "#/components/schemas/Schema"
+        },
+        "source":                  {
+          "$ref": "#/components/schemas/Source"
+        },
+        "refresh_state_uuid":      {
+          "type":   "string",
+          "format": "uuid"
+        },
+        "refresh_state_part_uuid": {
+          "type":   "string",
+          "format": "uuid"
+        },
+        "total_parts":             {
+          "type": "integer"
+        },
+        "sweep_scope":             {
+          "type": "object"
+        },
+        "collections":             {
+          "type":  "array",
+          "items": {
+            "$ref": "#/components/schemas/InventoryCollection"
+          }
+        }
+      },
+      "example":    {
+        "schema":                  {
+          "name": "name"
+        },
+        "collections":             [
+                                     {
+                                       "data":              [
+                                                              {
+                                                              },
+                                                              {
+                                                              }
+                                                            ],
+                                       "name":              "name",
+                                       "all_manager_uuids": [
+                                                              "all_manager_uuids",
+                                                              "all_manager_uuids"
+                                                            ],
+                                       "partial_data":      [
+                                                              nil,
+                                                              nil
+                                                            ],
+                                       "manager_uuids":     [
+                                                              "manager_uuids",
+                                                              "manager_uuids"
+                                                            ]
+                                     },
+                                     {
+                                       "data":              [
+                                                              {
+                                                              },
+                                                              {
+                                                              }
+                                                            ],
+                                       "name":              "name",
+                                       "all_manager_uuids": [
+                                                              "all_manager_uuids",
+                                                              "all_manager_uuids"
+                                                            ],
+                                       "partial_data":      [
+                                                              nil,
+                                                              nil
+                                                            ],
+                                       "manager_uuids":     [
+                                                              "manager_uuids",
+                                                              "manager_uuids"
+                                                            ]
+                                     }
+                                   ],
+        "total_parts":             0,
+        "name":                    "name",
+        "refresh_state_uuid":      "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
+        "refresh_state_part_uuid": "046b6c7f-0b8a-43b9-b35d-6489e6daee91",
+        "source":                  {
+          "name": "Widget Adapter",
+          "id":   "d290f1ee-6c54-4b01-90e6-d701748f0851"
+        },
+        "sweep_scope":             [
+                                     "sweep_scope",
+                                     "sweep_scope"
+                                   ]
+      }
+    }
+
+    schemas["InventoryCollection"] = {
+      "type":       "object",
+      "required":   [
+                      "name"
+                    ],
+      "properties": {
+        "name":              {
+          "type": "string"
+        },
+        "manager_uuids":     {
+          "type":  "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "all_manager_uuids": {
+          "type":  "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data":              {
+          "type":  "array",
+          "items": {
+            "$ref": "#/components/schemas/InventoryObject"
+          }
+        },
+        "partial_data":      {
+          "type":  "array",
+          "items": {
+            "$ref": "#/components/schemas/InventoryObject"
+          }
+        }
+      },
+      "example":    {
+        "data":              [
+                               {
+                               },
+                               {
+                               }
+                             ],
+        "name":              "name",
+        "all_manager_uuids": [
+                               "all_manager_uuids",
+                               "all_manager_uuids"
+                             ],
+        "partial_data":      [
+                               nil,
+                               nil
+                             ],
+        "manager_uuids":     [
+                               "manager_uuids",
+                               "manager_uuids"
+                             ]
+      }
+    }
+
+    schemas["InventoryObject"] = {
+      "type": "object"
+    }
+
+    schemas["InventoryObjectLazy"] = {
+      "type":       "object",
+      "required":   [
+                      "inventory_collection_name"
+                    ],
+      "properties": {
+        "inventory_collection_name":   {
+          "type": "string"
+        },
+        "reference":                   {
+          "type":       "object",
+          "properties": {
+          }
+        },
+        "ref":                         {
+          "type": "string"
+        },
+        "key":                         {
+          "type": "string"
+        },
+        "default":                     {
+          "type":       "object",
+          "properties": {
+          }
+        },
+        "transform_nested_lazy_finds": {
+          "type": "boolean"
+        }
+      }
+    }
+
     (connection.tables - INTERNAL_TABLES).each do |table_name|
       build_schema(table_name.singularize.camelize)
     end
@@ -423,7 +615,7 @@ class OpenapiGenerator
   ]
 
   GENERATOR_BLACKLIST_ATTRIBUTES         = [
-    :resource_timestamps, :resource_timestamps_max, :tenant_id, :source_id, :created_at, :updated_at, :last_seen_at
+    :id, :resource_timestamps, :resource_timestamps_max, :tenant_id, :source_id, :created_at, :updated_at, :last_seen_at
   ].to_set.freeze
   GENERATOR_ALLOW_BLACKLISTED_ATTRIBUTES = {
     :tenant_id => ['Source', 'Endpoint', 'Authentication', 'Application'].to_set.freeze
