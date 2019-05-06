@@ -103,8 +103,8 @@ class OpenapiGenerator
     @schemas ||= {}
   end
 
-  def references
-    @references ||= {}
+  def reference_types
+    @reference_types ||= {}
   end
 
   def build_schema(klass_name)
@@ -112,24 +112,33 @@ class OpenapiGenerator
     "##{SCHEMAS_PATH}/#{klass_name}"
   end
 
-  def build_references_schema(inventory_collection)
-    references[inventory_collection.model_class.to_s] ||= []
+  # Collects what types of reference_types are there for each inventory collection (e.g. primary, by_name, etc.)
+  def build_reference_types(inventory_collection)
+    class_name = inventory_collection.model_class.to_s
 
-    references[inventory_collection.model_class.to_s] << add_primary_reference_schema(inventory_collection)
+    reference_types[class_name] ||= []
+    reference_types[class_name] << "#{class_name}Reference"
     inventory_collection.secondary_refs.each do |key, value|
-      references[inventory_collection.model_class.to_s] << add_secondary_reference_schema(inventory_collection, key, value)
+      reference_types[class_name] << "#{class_name}Reference#{key.to_s.camelize}"
+    end
+  end
+
+  def build_references_schema(inventory_collection)
+    add_primary_reference_schema(inventory_collection)
+    inventory_collection.secondary_refs.each do |key, _value|
+      add_secondary_reference_schema(inventory_collection, key)
     end
   end
 
   def add_primary_reference_schema(inventory_collection)
-    class_name = inventory_collection.model_class.to_s
+    class_name                        = inventory_collection.model_class.to_s
     schemas["#{class_name}Reference"] = lazy_find(class_name, inventory_collection)
   end
 
-  def add_secondary_reference_schema(inventory_collection, key, value)
+  def add_secondary_reference_schema(inventory_collection, key)
     class_name = inventory_collection.model_class.to_s
 
-    schemas["#{inventory_collection.model_class.to_s}Reference#{key.to_s.camelize}"] = lazy_find(class_name, inventory_collection)
+    schemas["#{inventory_collection.model_class.to_s}Reference#{key.to_s.camelize}"] = lazy_find(class_name, inventory_collection, key)
   end
 
   def parameters
@@ -213,7 +222,7 @@ class OpenapiGenerator
     @inventory_collections_cache = schema.collections
   end
 
-  def lazy_find(klass_name, inventory_collection, ref=:manager_ref)
+  def lazy_find(klass_name, inventory_collection, ref = :manager_ref)
     {
       "type"       => "object",
       "required"   => [
@@ -236,18 +245,20 @@ class OpenapiGenerator
   end
 
   def lazy_find_reference(klass_name, inventory_collection, ref)
-    columns = if ref == :manager_ref
-                inventory_collection.manager_ref_to_cols.map(&:to_s)
-              else
-                inventory_collection.secondary_refs[ref].map do |ref|
-                  association_to_foreign_key_mapping(klass_name)[ref] || ref
-                end
-              end
+    attrs = if ref == :manager_ref
+              inventory_collection.manager_ref
+            else
+              inventory_collection.secondary_refs[ref]
+            end
+
+    columns = attrs.map do |ref|
+      association_to_foreign_key_mapping(inventory_collection.model_class)[ref] || ref
+    end
 
     {
       "type"       => "object",
-      "required"   => inventory_collection.manager_ref,
-      "properties" => openapi_schema_properties(klass_name, columns)
+      "required"   => attrs.map(&:to_s),
+      "properties" => openapi_schema_properties(klass_name, columns.map(&:to_s))
     }
   end
 
@@ -255,7 +266,6 @@ class OpenapiGenerator
     if key == model.primary_key
       [key, {"$ref" => "##{SCHEMAS_PATH}/ID"}]
     elsif (foreign_key = foreign_key_mapping(model)[key])
-
       # TODO(lsmola) deal with polymorphic relations, then we can allow all types of lazy_references?
       # require 'byebug'; byebug if foreign_key.polymorphic?
       # TODO(lsmola) ignore also the _type column
@@ -263,7 +273,15 @@ class OpenapiGenerator
       inventory_collection_name      = foreign_key.table_name
       reference_inventory_collection = inventory_collections[inventory_collection_name.to_sym]
 
-      [foreign_key.name.to_s, {"$ref" => "##{SCHEMAS_PATH}/#{reference_inventory_collection.model_class.to_s}Reference"}]
+      ref_types = reference_types[reference_inventory_collection.model_class.to_s]
+      refs      = if ref_types.size > 1
+                    {
+                      "oneOf" => ref_types.map { |ref_type| {"$ref" => "##{SCHEMAS_PATH}/#{ref_type}"} }
+                    }
+                  else
+                    {"$ref" => "##{SCHEMAS_PATH}/#{ref_types.first}"}
+                  end
+      [foreign_key.name.to_s, refs]
     else
       properties_value = {
         "type" => "string"
@@ -625,6 +643,10 @@ class OpenapiGenerator
         }
       }
     }
+
+    inventory_collections.each do |_key, inventory_collection|
+      build_reference_types(inventory_collection)
+    end
 
     inventory_collections.each do |_key, inventory_collection|
       build_references_schema(inventory_collection)
