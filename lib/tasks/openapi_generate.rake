@@ -275,8 +275,14 @@ class OpenapiGenerator
 
       ref_types = reference_types[reference_inventory_collection.model_class.to_s]
       refs      = if ref_types.size > 1
+                    # TODO(lsmola) this should also have
+                    # "discriminator" => { "propertyName" => "ref"}
+                    # but also a custom mappings
+                    # mapping:
+                    #     by_name: '#/components/schemas/ContainerNodeReferenceByName'
+                    # 		manager_ref: '#/components/schemas/ContainerNodeReference'
                     {
-                      "oneOf" => ref_types.map { |ref_type| {"$ref" => "##{SCHEMAS_PATH}/#{ref_type}"} }
+                      "oneOf" => ref_types.map { |ref_type| {"$ref" => "##{SCHEMAS_PATH}/#{ref_type}"} },
                     }
                   else
                     {"$ref" => "##{SCHEMAS_PATH}/#{ref_types.first}"}
