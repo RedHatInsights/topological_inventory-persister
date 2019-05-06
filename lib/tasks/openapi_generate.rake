@@ -103,9 +103,33 @@ class OpenapiGenerator
     @schemas ||= {}
   end
 
+  def references
+    @references ||= {}
+  end
+
   def build_schema(klass_name)
     schemas[klass_name] = openapi_schema(klass_name)
     "##{SCHEMAS_PATH}/#{klass_name}"
+  end
+
+  def build_references_schema(inventory_collection)
+    references[inventory_collection.model_class.to_s] ||= []
+
+    references[inventory_collection.model_class.to_s] << add_primary_reference_schema(inventory_collection)
+    inventory_collection.secondary_refs.each do |key, value|
+      references[inventory_collection.model_class.to_s] << add_secondary_reference_schema(inventory_collection, key, value)
+    end
+  end
+
+  def add_primary_reference_schema(inventory_collection)
+    class_name = inventory_collection.model_class.to_s
+    schemas["#{class_name}Reference"] = lazy_find(class_name, inventory_collection)
+  end
+
+  def add_secondary_reference_schema(inventory_collection, key, value)
+    class_name = inventory_collection.model_class.to_s
+
+    schemas["#{inventory_collection.model_class.to_s}Reference#{key.to_s.camelize}"] = lazy_find(class_name, inventory_collection)
   end
 
   def parameters
@@ -189,16 +213,7 @@ class OpenapiGenerator
     @inventory_collections_cache = schema.collections
   end
 
-  def lazy_find(klass_name, inventory_collection)
-    # "inventory_collection_name": "tags",
-    #   "reference": {
-    #   "name": "tag2",
-    #   "value": "tag2_value"
-    # },
-    #   "ref": "manager_ref"
-    # 
-
-
+  def lazy_find(klass_name, inventory_collection, ref=:manager_ref)
     {
       "type"       => "object",
       "required"   => [
@@ -211,20 +226,28 @@ class OpenapiGenerator
           "type" => "string",
           "enum" => [inventory_collection.name]
         },
-        "reference"                 => lazy_find_reference(klass_name, inventory_collection),
+        "reference"                 => lazy_find_reference(klass_name, inventory_collection, ref),
         "ref"                       => {
           "type" => "string",
-          "enum" => ["manager_ref"]
+          "enum" => [ref]
         }
       }
     }
   end
 
-  def lazy_find_reference(klass_name, inventory_collection)
+  def lazy_find_reference(klass_name, inventory_collection, ref)
+    columns = if ref == :manager_ref
+                inventory_collection.manager_ref_to_cols.map(&:to_s)
+              else
+                inventory_collection.secondary_refs[ref].map do |ref|
+                  association_to_foreign_key_mapping(klass_name)[ref] || ref
+                end
+              end
+
     {
       "type"       => "object",
       "required"   => inventory_collection.manager_ref,
-      "properties" => openapi_schema_properties(klass_name, inventory_collection.manager_ref_to_cols.map(&:to_s))
+      "properties" => openapi_schema_properties(klass_name, columns)
     }
   end
 
@@ -240,7 +263,7 @@ class OpenapiGenerator
       inventory_collection_name      = foreign_key.table_name
       reference_inventory_collection = inventory_collections[inventory_collection_name.to_sym]
 
-      [foreign_key.name.to_s, lazy_find(klass_name, reference_inventory_collection)]
+      [foreign_key.name.to_s, {"$ref" => "##{SCHEMAS_PATH}/#{reference_inventory_collection.model_class.to_s}Reference"}]
     else
       properties_value = {
         "type" => "string"
@@ -284,6 +307,15 @@ class OpenapiGenerator
 
     (@foreign_key_to_association_mapping ||= {})[model_class] ||= belongs_to_associations(model_class).each_with_object({}) do |x, obj|
       obj[x.foreign_key] = x.name
+    end
+  end
+
+  # @return [Hash{Symbol => String}] Hash with association name mapped to foreign key column name
+  def association_to_foreign_key_mapping(model_class)
+    return {} unless model_class
+
+    (@association_to_foreign_key_mapping ||= {})[model_class] ||= belongs_to_associations(model_class).each_with_object({}) do |x, obj|
+      obj[x.name] = x.foreign_key.to_s
     end
   end
 
@@ -593,6 +625,10 @@ class OpenapiGenerator
         }
       }
     }
+
+    inventory_collections.each do |_key, inventory_collection|
+      build_references_schema(inventory_collection)
+    end
 
     (connection.tables - INTERNAL_TABLES).each do |table_name|
       build_schema(table_name.singularize.camelize)
