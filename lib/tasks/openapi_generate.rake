@@ -128,6 +128,7 @@ class OpenapiGenerator
   end
 
   def openapi_schema(klass_name)
+    # TODO(lsmola) add require properties
     {
       "allOf" => [
         {
@@ -248,14 +249,16 @@ class OpenapiGenerator
       when :jsonb
         properties_value["type"] = "object"
         ['type', 'items'].each do |property_key|
-          prop                           = openapi_contents.dig(*path_parts(SCHEMAS_PATH), klass_name, "properties", key, property_key)
+          prop                           = openapi_contents.dig(*path_parts(SCHEMAS_PATH), klass_name, "allOf", 1, "properties", key, property_key)
           properties_value[property_key] = prop if prop.present?
         end
       end
 
+      # require 'byebug'; byebug if key.to_s == "cpu_limit"
+
       # Take existing attrs, that we won't generate
       ['example', 'format', 'readOnly', 'title', 'description'].each do |property_key|
-        property_value                 = openapi_contents.dig(*path_parts(SCHEMAS_PATH), klass_name, "properties", key, property_key)
+        property_value                 = openapi_contents.dig(*path_parts(SCHEMAS_PATH), klass_name, "allOf", 1, "properties", key, property_key)
         properties_value[property_key] = property_value if property_value
       end
 
@@ -420,7 +423,7 @@ class OpenapiGenerator
     # TODO(lsmola) remove references that are not used? E.g. ContainerNodeTagReference ? That reference is not allowed
     # to be used anywhere.
 
-    
+
 
     new_content                             = openapi_contents
     new_content["paths"]                    = openapi_contents.dig("paths")
