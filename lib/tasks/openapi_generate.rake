@@ -127,8 +127,18 @@ class OpenapiGenerator
     "##{SCHEMAS_PATH}/#{collection_name}"
   end
 
+  # Required cols are all cols having NOT NULL constraint that are not blacklisted
+  def required_cols(model, used_attrs)
+    required_cols = model.columns_hash.values.select { |x| !x.null }.map(&:name).map do |name|
+      (foreign_key_to_association_mapping(model)[name] || name).to_s
+    end
+    required_cols & used_attrs
+  end
+
   def openapi_schema(klass_name)
-    # TODO(lsmola) add require properties
+    model = klass_name.constantize
+    properties = openapi_schema_properties(klass_name)
+
     {
       "allOf" => [
         {
@@ -136,7 +146,8 @@ class OpenapiGenerator
         },
         {
           "type"       => "object",
-          "properties" => openapi_schema_properties(klass_name),
+          "required"   => required_cols(model, properties.keys),
+          "properties" => properties,
         }
       ]
     }
@@ -422,7 +433,6 @@ class OpenapiGenerator
 
     # TODO(lsmola) remove references that are not used? E.g. ContainerNodeTagReference ? That reference is not allowed
     # to be used anywhere.
-
 
 
     new_content                             = openapi_contents
