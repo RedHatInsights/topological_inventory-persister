@@ -183,6 +183,14 @@ class OpenapiGenerator
                     reference_types[reference_inventory_collection.model_class.to_s]
                   end
 
+      if GENERATOR_LIMIT_ATTRIBUTE_REFERENCES[foreign_key.name.to_s]
+        ref_types = GENERATOR_LIMIT_ATTRIBUTE_REFERENCES[foreign_key.name.to_s]
+      end
+
+      ref_types.delete_if do |ref_type|
+        GENERATOR_LIMIT_REFERENCE_USAGE[ref_type] && !GENERATOR_LIMIT_REFERENCE_USAGE[ref_type].include?(foreign_key.name.to_s)
+      end
+
       refs = if ref_types.size > 1
                # TODO(lsmola) this should also have
                # "discriminator" => { "propertyName" => "ref"}
@@ -432,6 +440,16 @@ class OpenapiGenerator
   # {
   #   :tenant_id => ['Source', 'Endpoint', 'Authentication', 'Application'].to_set
   # }.freeze
+
+  # Limits reference only for a certain attribute
+  GENERATOR_LIMIT_REFERENCE_USAGE = {
+    "CrossLinkVmsReference" => ["lives_on"]
+  }
+
+  # Hardcode references for certain attributes
+  GENERATOR_LIMIT_ATTRIBUTE_REFERENCES = {
+    "lives_on" => ["CrossLinkVmsReference"]
+  }
 end
 
 $LOAD_PATH << File.expand_path("../lib", __dir__)
