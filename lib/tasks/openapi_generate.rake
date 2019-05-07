@@ -89,7 +89,7 @@ class OpenapiGenerator
     required_cols = model.columns_hash.values.select { |x| !x.null }.map(&:name).map do |name|
       (foreign_key_to_association_mapping(model)[name] || name).to_s
     end
-    required_cols & used_attrs
+    (required_cols & used_attrs).sort
   end
 
   def openapi_schema(klass_name)
