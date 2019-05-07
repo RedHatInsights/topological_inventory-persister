@@ -84,49 +84,6 @@ class OpenapiGenerator
     "##{PARAMETERS_PATH}/#{name}"
   end
 
-  def openapi_list_description(klass_name, primary_collection)
-    primary_collection = nil if primary_collection == klass_name
-    {
-      "summary"     => "List #{klass_name.pluralize}#{" for #{primary_collection}" if primary_collection}",
-      "operationId" => "list#{primary_collection}#{klass_name.pluralize}",
-      "description" => "Returns an array of #{klass_name} objects",
-      "parameters"  => [
-        {"$ref" => "##{PARAMETERS_PATH}/QueryLimit"},
-        {"$ref" => "##{PARAMETERS_PATH}/QueryOffset"},
-        {"$ref" => "##{PARAMETERS_PATH}/QueryFilter"}
-      ],
-      "responses"   => {
-        "200" => {
-          "description" => "#{klass_name.pluralize} collection",
-          "content"     => {
-            "application/json" => {
-              "schema" => {"$ref" => build_collection_schema(klass_name)}
-            }
-          }
-        }
-      }
-    }.tap do |h|
-      h["parameters"] << {"$ref" => build_parameter("ID")} if primary_collection
-    end
-  end
-
-  def build_collection_schema(klass_name)
-    collection_name          = "#{klass_name.pluralize}Collection"
-    schemas[collection_name] = {
-      "type"       => "object",
-      "properties" => {
-        "meta"  => {"$ref" => "##{SCHEMAS_PATH}/CollectionMetadata"},
-        "links" => {"$ref" => "##{SCHEMAS_PATH}/CollectionLinks"},
-        "data"  => {
-          "type"  => "array",
-          "items" => {"$ref" => build_schema(klass_name)}
-        }
-      }
-    }
-
-    "##{SCHEMAS_PATH}/#{collection_name}"
-  end
-
   # Required cols are all cols having NOT NULL constraint that are not blacklisted
   def required_cols(model, used_attrs)
     required_cols = model.columns_hash.values.select { |x| !x.null }.map(&:name).map do |name|
@@ -405,17 +362,17 @@ class OpenapiGenerator
         "ref":                         {
           "type": "string"
         },
-        "key":                         {
-          "type": "string"
-        },
-        "default":                     {
-          "type":       "object",
-          "properties": {
-          }
-        },
-        "transform_nested_lazy_finds": {
-          "type": "boolean"
-        }
+        # "key":                         {
+        #   "type": "string"
+        # },
+        # "default":                     {
+        #   "type":       "object",
+        #   "properties": {
+        #   }
+        # },
+        # "transform_nested_lazy_finds": {
+        #   "type": "boolean"
+        # }
       }
     }
 
@@ -431,9 +388,7 @@ class OpenapiGenerator
       build_schema(inventory_collection.model_class.to_s)
     end
 
-    # TODO(lsmola) remove references that are not used? E.g. ContainerNodeTagReference ? That reference is not allowed
-    # to be used anywhere.
-
+    cleanup_unused_schemas!
 
     new_content                             = openapi_contents
     new_content["paths"]                    = openapi_contents.dig("paths")
@@ -441,6 +396,17 @@ class OpenapiGenerator
     new_content["components"]["schemas"]    = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val }
     new_content["components"]["parameters"] = parameters.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["parameters"][name] || {} }
     File.write(openapi_file, JSON.pretty_generate(new_content) + "\n")
+  end
+
+  # Remove references that are not used. E.g. ContainerNodeTagReference ? That reference is not allowed
+  # to be used anywhere.
+  def cleanup_unused_schemas!
+    schemas_string = JSON.generate(schemas)
+    used_references = schemas_string.scan(/\{\"\$ref\":\"#\/components\/schemas\/(.*?)\"/).flatten.uniq
+    existing_references = schemas.keys.select {|x| x.include?("Reference")}
+    unused_references = existing_references - used_references
+
+    schemas.except!(*unused_references)
   end
 
   GENERATOR_BLACKLIST_ATTRIBUTES = [
