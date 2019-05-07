@@ -204,10 +204,7 @@ class OpenapiGenerator
   end
 
   def openapi_schema_properties_value(klass_name, model, key, value)
-    # TODO(lsmola) add nullable: true to all columns that do not have not null constraint?
-    if key == model.primary_key
-      [key, {"$ref" => "##{SCHEMAS_PATH}/ID"}]
-    elsif (foreign_key = foreign_key_mapping(model)[key])
+    if (foreign_key = foreign_key_mapping(model)[key])
       # TODO(lsmola) deal with polymorphic relations, then we can allow all types of lazy_references?
       # require 'byebug'; byebug if foreign_key.polymorphic?
       # TODO(lsmola) ignore also the _type column
@@ -229,6 +226,10 @@ class OpenapiGenerator
                   else
                     {"$ref" => "##{SCHEMAS_PATH}/#{ref_types.first}"}
                   end
+
+      if value.null
+        refs["nullable"] = true
+      end
       [foreign_key.name.to_s, refs]
     else
       properties_value = {
@@ -256,6 +257,10 @@ class OpenapiGenerator
       ['example', 'format', 'readOnly', 'title', 'description'].each do |property_key|
         property_value                 = openapi_contents.dig(*path_parts(SCHEMAS_PATH), klass_name, "properties", key, property_key)
         properties_value[property_key] = property_value if property_value
+      end
+
+      if value.null
+        properties_value["nullable"] = true
       end
 
       [key, properties_value.sort.to_h]
@@ -373,9 +378,7 @@ class OpenapiGenerator
 
     schemas["InventoryObjectLazy"] = {
       "type":       "object",
-      "required":   [
-                      "inventory_collection_name"
-                    ],
+      "required":   ["inventory_collection_name", "reference", "ref"],
       "properties": {
         "inventory_collection_name":   {
           "type": "string"
@@ -413,6 +416,11 @@ class OpenapiGenerator
     inventory_collections.each do |_key, inventory_collection|
       build_schema(inventory_collection.model_class.to_s)
     end
+
+    # TODO(lsmola) remove references that are not used? E.g. ContainerNodeTagReference ? That reference is not allowed
+    # to be used anywhere.
+
+    
 
     new_content                             = openapi_contents
     new_content["paths"]                    = openapi_contents.dig("paths")
