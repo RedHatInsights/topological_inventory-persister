@@ -161,8 +161,8 @@ class OpenapiGenerator
               inventory_collection.secondary_refs[ref]
             end
 
-    columns = attrs.map do |ref|
-      association_to_foreign_key_mapping(inventory_collection.model_class)[ref] || ref
+    columns = attrs.map do |col|
+      association_to_foreign_key_mapping(inventory_collection.model_class)[col] || col
     end
 
     {
@@ -444,21 +444,18 @@ class OpenapiGenerator
   # Limits reference only for a certain attribute
   GENERATOR_LIMIT_REFERENCE_USAGE = {
     "CrossLinkVmsReference" => ["lives_on"]
-  }
+  }.freeze
 
   # Hardcode references for certain attributes
   GENERATOR_LIMIT_ATTRIBUTE_REFERENCES = {
     "lives_on" => ["CrossLinkVmsReference"]
-  }
+  }.freeze
 end
 
 $LOAD_PATH << File.expand_path("../lib", __dir__)
 require "bundler/setup"
 require "topological_inventory/schema/default"
 require "topological_inventory/core/ar_helper"
-
-queue_host = ENV["QUEUE_HOST"] || "localhost"
-queue_port = ENV["QUEUE_PORT"] || 9092
 
 TopologicalInventory::Core::ArHelper.database_yaml_path = Pathname.new(__dir__).join("../../config/database.yml")
 TopologicalInventory::Core::ArHelper.load_environment!
