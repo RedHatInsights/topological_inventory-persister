@@ -375,6 +375,7 @@ class OpenapiGenerator
         :ref                       => {
           :type => "string"
         }
+        # TODO(lsmola) these are not really supported now? Short term we will need just key, for stack to stack relation
         # "key":                         {
         #   "type": "string"
         # },
