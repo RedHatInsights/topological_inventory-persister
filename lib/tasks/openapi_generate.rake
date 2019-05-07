@@ -52,7 +52,7 @@ class OpenapiGenerator
 
     reference_types[class_name] ||= []
     reference_types[class_name] << "#{inventory_collection.name.to_s.camelize}Reference"
-    inventory_collection.secondary_refs.each do |key, value|
+    inventory_collection.secondary_refs.each do |key, _value|
       reference_types[class_name] << "#{inventory_collection.name.to_s.camelize}Reference#{key.to_s.camelize}"
     end
   end
@@ -65,7 +65,7 @@ class OpenapiGenerator
   end
 
   def add_primary_reference_schema(inventory_collection)
-    class_name                        = inventory_collection.model_class.to_s
+    class_name                                                     = inventory_collection.model_class.to_s
     schemas["#{inventory_collection.name.to_s.camelize}Reference"] = lazy_find(class_name, inventory_collection)
   end
 
@@ -93,7 +93,7 @@ class OpenapiGenerator
   end
 
   def openapi_schema(klass_name)
-    model = klass_name.constantize
+    model      = klass_name.constantize
     properties = openapi_schema_properties(klass_name)
 
     {
@@ -174,33 +174,39 @@ class OpenapiGenerator
 
   def openapi_schema_properties_value(klass_name, model, key, value)
     if (foreign_key = foreign_key_mapping(model)[key])
-      # TODO(lsmola) deal with polymorphic relations, then we can allow all types of lazy_references?
-      # require 'byebug'; byebug if foreign_key.polymorphic?
-      # TODO(lsmola) ignore also the _type column
-      return if foreign_key.polymorphic?
-      inventory_collection_name      = foreign_key.table_name
-      reference_inventory_collection = inventory_collections[inventory_collection_name.to_sym]
-
-      ref_types = reference_types[reference_inventory_collection.model_class.to_s]
-      refs      = if ref_types.size > 1
-                    # TODO(lsmola) this should also have
-                    # "discriminator" => { "propertyName" => "ref"}
-                    # but also a custom mappings
-                    # mapping:
-                    #     by_name: '#/components/schemas/ContainerNodeReferenceByName'
-                    # 		manager_ref: '#/components/schemas/ContainerNodeReference'
-                    {
-                      "oneOf" => ref_types.map { |ref_type| {"$ref" => "##{SCHEMAS_PATH}/#{ref_type}"} },
-                    }
+      ref_types = if foreign_key.polymorphic?
+                    polymorphic_types(foreign_key.name.to_s).map { |x| reference_types[x] }.flatten
                   else
-                    {"$ref" => "##{SCHEMAS_PATH}/#{ref_types.first}"}
+                    inventory_collection_name      = foreign_key.table_name
+                    reference_inventory_collection = inventory_collections[inventory_collection_name.to_sym]
+
+                    reference_types[reference_inventory_collection.model_class.to_s]
                   end
+
+
+      refs = if ref_types.size > 1
+               # TODO(lsmola) this should also have
+               # "discriminator" => { "propertyName" => "ref"}
+               # but also a custom mappings
+               # mapping:
+               #     by_name: '#/components/schemas/ContainerNodeReferenceByName'
+               # 		manager_ref: '#/components/schemas/ContainerNodeReference'
+               {
+                 "oneOf" => ref_types.map { |ref_type| {"$ref" => "##{SCHEMAS_PATH}/#{ref_type}"} },
+               }
+             else
+               raise "Can't find allowed references for #{klass_name}, attribute: #{foreign_key.name.to_s}" if ref_types.empty?
+
+               {"$ref" => "##{SCHEMAS_PATH}/#{ref_types.first}"}
+             end
 
       if value.null
         refs["nullable"] = true
       end
       [foreign_key.name.to_s, refs]
     else
+      return if (foreign_key = foreign_key_mapping(model)[key.gsub("_type", "_id")]) && foreign_key.polymorphic?
+
       properties_value = {
         "type" => "string"
       }
@@ -351,15 +357,15 @@ class OpenapiGenerator
       "type":       "object",
       "required":   ["inventory_collection_name", "reference", "ref"],
       "properties": {
-        "inventory_collection_name":   {
+        "inventory_collection_name": {
           "type": "string"
         },
-        "reference":                   {
+        "reference":                 {
           "type":       "object",
           "properties": {
           }
         },
-        "ref":                         {
+        "ref":                       {
           "type": "string"
         },
         # "key":                         {
@@ -401,12 +407,21 @@ class OpenapiGenerator
   # Remove references that are not used. E.g. ContainerNodeTagReference ? That reference is not allowed
   # to be used anywhere.
   def cleanup_unused_schemas!
-    schemas_string = JSON.generate(schemas)
-    used_references = schemas_string.scan(/\{\"\$ref\":\"#\/components\/schemas\/(.*?)\"/).flatten.uniq
-    existing_references = schemas.keys.select {|x| x.include?("Reference")}
-    unused_references = existing_references - used_references
+    schemas_string      = JSON.generate(schemas)
+    used_references     = schemas_string.scan(/\{\"\$ref\":\"#\/components\/schemas\/(.*?)\"/).flatten.uniq
+    existing_references = schemas.keys.select { |x| x.include?("Reference") }
+    unused_references   = existing_references - used_references
 
     schemas.except!(*unused_references)
+  end
+
+  def polymorphic_types(attribute)
+    case attribute
+    when "lives_on"
+      ["Vm"]
+    else
+      []
+    end
   end
 
   GENERATOR_BLACKLIST_ATTRIBUTES = [
