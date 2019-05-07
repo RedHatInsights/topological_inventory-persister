@@ -12,8 +12,8 @@ class OpenapiGenerator
   def api_version
     @api_version ||= Rails.application.routes.routes.each_with_object([]) do |route, array|
       matches = ActionDispatch::Routing::RouteWrapper
-                  .new(route)
-                  .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
+                .new(route)
+                .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
       array << matches[1] if matches
     end.max
   end
@@ -86,7 +86,7 @@ class OpenapiGenerator
 
   # Required cols are all cols having NOT NULL constraint that are not blacklisted
   def required_cols(model, used_attrs)
-    required_cols = model.columns_hash.values.select { |x| !x.null }.map(&:name).map do |name|
+    required_cols = model.columns_hash.values.reject(&:null).map(&:name).map do |name|
       (foreign_key_to_association_mapping(model)[name] || name).to_s
     end
     (required_cols & used_attrs).sort
@@ -99,12 +99,12 @@ class OpenapiGenerator
     {
       "allOf" => [
         {
-          "$ref": "#/components/schemas/InventoryObject"
+          :"$ref" => "#/components/schemas/InventoryObject"
         },
         {
           "type"       => "object",
           "required"   => required_cols(model, properties.keys),
-          "properties" => properties,
+          "properties" => properties
         }
       ]
     }
@@ -183,19 +183,18 @@ class OpenapiGenerator
                     reference_types[reference_inventory_collection.model_class.to_s]
                   end
 
-
       refs = if ref_types.size > 1
                # TODO(lsmola) this should also have
                # "discriminator" => { "propertyName" => "ref"}
                # but also a custom mappings
                # mapping:
                #     by_name: '#/components/schemas/ContainerNodeReferenceByName'
-               # 		manager_ref: '#/components/schemas/ContainerNodeReference'
+               #     manager_ref: '#/components/schemas/ContainerNodeReference'
                {
-                 "oneOf" => ref_types.map { |ref_type| {"$ref" => "##{SCHEMAS_PATH}/#{ref_type}"} },
+                 "oneOf" => ref_types.map { |ref_type| {"$ref" => "##{SCHEMAS_PATH}/#{ref_type}"} }
                }
              else
-               raise "Can't find allowed references for #{klass_name}, attribute: #{foreign_key.name.to_s}" if ref_types.empty?
+               raise "Can't find allowed references for #{klass_name}, attribute: #{foreign_key.name}" if ref_types.empty?
 
                {"$ref" => "##{SCHEMAS_PATH}/#{ref_types.first}"}
              end
@@ -292,82 +291,82 @@ class OpenapiGenerator
   def run
     # TODO(lsmola) Split Inventory to Inventory & Sweeping
     schemas["Inventory"] = {
-      "type":       "object",
-      "required":   ["schema", "source"],
-      "properties": {
-        "name":                    {
-          "type": "string"
+      :type       => "object",
+      :required   => ["schema", "source"],
+      :properties => {
+        :name                    => {
+          :type => "string"
         },
-        "schema":                  {
-          "$ref": "#/components/schemas/Schema"
+        :schema                  => {
+          :"$ref" => "#/components/schemas/Schema"
         },
-        "source":                  {
-          "$ref": "#/components/schemas/Source"
+        :source                  => {
+          :"$ref" => "#/components/schemas/Source"
         },
-        "refresh_state_uuid":      {
-          "type":   "string",
-          "format": "uuid"
+        :refresh_state_uuid      => {
+          :type   => "string",
+          :format => "uuid"
         },
-        "refresh_state_part_uuid": {
-          "type":   "string",
-          "format": "uuid"
+        :refresh_state_part_uuid => {
+          :type   => "string",
+          :format => "uuid"
         },
-        "total_parts":             {
-          "type": "integer"
+        :total_parts             => {
+          :type => "integer"
         },
-        "sweep_scope":             {
-          "type": "object"
+        :sweep_scope             => {
+          :type => "object"
         },
-        "collections":             {
-          "type":  "array",
-          "items": {
-            "$ref": "#/components/schemas/InventoryCollection"
+        :collections             => {
+          :type  => "array",
+          :items => {
+            :"$ref" => "#/components/schemas/InventoryCollection"
           }
         }
       }
     }
 
     schemas["InventoryCollection"] = {
-      "type":       "object",
-      "required":   ["name"],
-      "properties": {
-        "name":         {
-          "type": "string"
+      :type       => "object",
+      :required   => ["name"],
+      :properties => {
+        :name         => {
+          :type => "string"
         },
-        "data":         {
-          "type":  "array",
-          "items": {
-            "$ref": "#/components/schemas/InventoryObject"
+        :data         => {
+          :type  => "array",
+          :items => {
+            :"$ref" => "#/components/schemas/InventoryObject"
           }
         },
-        "partial_data": {
-          "type":  "array",
-          "items": {
-            "$ref": "#/components/schemas/InventoryObject"
+        :partial_data => {
+          :type  => "array",
+          :items => {
+            :"$ref" => "#/components/schemas/InventoryObject"
           }
         }
-      },
+      }
     }
 
     schemas["InventoryObject"] = {
-      "type": "object"
+      :type => "object"
     }
 
     schemas["InventoryObjectLazy"] = {
-      "type":       "object",
-      "required":   ["inventory_collection_name", "reference", "ref"],
-      "properties": {
-        "inventory_collection_name": {
-          "type": "string"
+      :type       => "object",
+      :required   => ["inventory_collection_name", "reference", "ref"],
+      :properties => {
+        :inventory_collection_name => {
+          :type => "string"
         },
-        "reference":                 {
-          "type":       "object",
-          "properties": {
+        :reference                 => {
+          :type       => "object",
+          :properties => {
           }
         },
-        "ref":                       {
-          "type": "string"
-        },
+        :ref                       => {
+          :type => "string"
+        }
         # "key":                         {
         #   "type": "string"
         # },
@@ -398,7 +397,7 @@ class OpenapiGenerator
 
     new_content                             = openapi_contents
     new_content["paths"]                    = openapi_contents.dig("paths")
-    new_content["components"]               ||= {}
+    new_content["components"] ||= {}
     new_content["components"]["schemas"]    = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val }
     new_content["components"]["parameters"] = parameters.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["parameters"][name] || {} }
     File.write(openapi_file, JSON.pretty_generate(new_content) + "\n")
@@ -428,7 +427,7 @@ class OpenapiGenerator
     :id, :resource_timestamps, :resource_timestamps_max, :tenant_id, :source_id, :created_at, :updated_at, :last_seen_at
   ].to_set.freeze
 
-  GENERATOR_ALLOW_BLACKLISTED_ATTRIBUTES = {}
+  GENERATOR_ALLOW_BLACKLISTED_ATTRIBUTES = {}.freeze
   # Format is:
   # {
   #   :tenant_id => ['Source', 'Endpoint', 'Authentication', 'Application'].to_set
