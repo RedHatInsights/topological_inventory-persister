@@ -51,9 +51,9 @@ class OpenapiGenerator
     class_name = inventory_collection.model_class.to_s
 
     reference_types[class_name] ||= []
-    reference_types[class_name] << "#{class_name}Reference"
+    reference_types[class_name] << "#{inventory_collection.name.to_s.camelize}Reference"
     inventory_collection.secondary_refs.each do |key, value|
-      reference_types[class_name] << "#{class_name}Reference#{key.to_s.camelize}"
+      reference_types[class_name] << "#{inventory_collection.name.to_s.camelize}Reference#{key.to_s.camelize}"
     end
   end
 
@@ -66,13 +66,13 @@ class OpenapiGenerator
 
   def add_primary_reference_schema(inventory_collection)
     class_name                        = inventory_collection.model_class.to_s
-    schemas["#{class_name}Reference"] = lazy_find(class_name, inventory_collection)
+    schemas["#{inventory_collection.name.to_s.camelize}Reference"] = lazy_find(class_name, inventory_collection)
   end
 
   def add_secondary_reference_schema(inventory_collection, key)
     class_name = inventory_collection.model_class.to_s
 
-    schemas["#{inventory_collection.model_class.to_s}Reference#{key.to_s.camelize}"] = lazy_find(class_name, inventory_collection, key)
+    schemas["#{inventory_collection.name.to_s.camelize}Reference#{key.to_s.camelize}"] = lazy_find(class_name, inventory_collection, key)
   end
 
   def parameters
