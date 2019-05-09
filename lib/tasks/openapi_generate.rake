@@ -390,6 +390,15 @@ class OpenapiGenerator
       }
     }
 
+    schemas["Schema"] = {
+      :type       => "object",
+      :properties => {
+        :name => {
+          :type => "string"
+        }
+      }
+    }
+
     inventory_collections.each do |_key, inventory_collection|
       build_reference_types(inventory_collection)
     end
