@@ -12,8 +12,8 @@ class OpenapiGenerator
   def api_version
     @api_version ||= Rails.application.routes.routes.each_with_object([]) do |route, array|
       matches = ActionDispatch::Routing::RouteWrapper
-                .new(route)
-                .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
+                  .new(route)
+                  .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
       array << matches[1] if matches
     end.max
   end
@@ -51,9 +51,9 @@ class OpenapiGenerator
     class_name = inventory_collection.model_class.to_s
 
     reference_types[class_name] ||= []
-    reference_types[class_name] << "#{inventory_collection.name.to_s.camelize}Reference"
+    reference_types[class_name] << "#{inventory_collection.name.to_s.singularize.camelize}Reference"
     inventory_collection.secondary_refs.each do |key, _value|
-      reference_types[class_name] << "#{inventory_collection.name.to_s.camelize}Reference#{key.to_s.camelize}"
+      reference_types[class_name] << "#{inventory_collection.name.to_s.singularize.camelize}Reference#{key.to_s.camelize}"
     end
   end
 
@@ -65,14 +65,14 @@ class OpenapiGenerator
   end
 
   def add_primary_reference_schema(inventory_collection)
-    class_name                                                     = inventory_collection.model_class.to_s
-    schemas["#{inventory_collection.name.to_s.camelize}Reference"] = lazy_find(class_name, inventory_collection)
+    class_name                                                                 = inventory_collection.model_class.to_s
+    schemas["#{inventory_collection.name.to_s.singularize.camelize}Reference"] = lazy_find(class_name, inventory_collection)
   end
 
   def add_secondary_reference_schema(inventory_collection, key)
     class_name = inventory_collection.model_class.to_s
 
-    schemas["#{inventory_collection.name.to_s.camelize}Reference#{key.to_s.camelize}"] = lazy_find(class_name, inventory_collection, key)
+    schemas["#{inventory_collection.name.to_s.singularize.camelize}Reference#{key.to_s.camelize}"] = lazy_find(class_name, inventory_collection, key)
   end
 
   def parameters
@@ -143,12 +143,16 @@ class OpenapiGenerator
       "properties" => {
         "inventory_collection_name" => {
           "type" => "string",
-          "enum" => [inventory_collection.name]
+          # Seems like enum is not being validated by committee gem
+          # "enum" => [inventory_collection.name]
+          "pattern" => "^#{inventory_collection.name}$"
         },
         "reference"                 => lazy_find_reference(klass_name, inventory_collection, ref),
         "ref"                       => {
           "type" => "string",
-          "enum" => [ref]
+          # Seems like enum is not being validated by committee gem
+          # "enum" => [ref]
+          "pattern" => "^#{ref}$"
         }
       }
     }
@@ -302,14 +306,17 @@ class OpenapiGenerator
       :type       => "object",
       :required   => ["schema", "source"],
       :properties => {
-        :name                    => {
+        :name   => {
           :type => "string"
         },
-        :schema                  => {
+        :schema => {
           :"$ref" => "#/components/schemas/Schema"
         },
+        # :source                  => {
+        #   :"$ref" => "#/components/schemas/Source"
+        # },
         :source                  => {
-          :"$ref" => "#/components/schemas/Source"
+          :type => "string",
         },
         :refresh_state_uuid      => {
           :type   => "string",
@@ -323,13 +330,19 @@ class OpenapiGenerator
           :type => "integer"
         },
         :sweep_scope             => {
-          :type => "object"
+          :oneOf => [
+            {
+              :type => "object"
+            },
+            {
+              :type => "array"
+            }
+          ]
+
         },
         :collections             => {
           :type  => "array",
-          :items => {
-            :"$ref" => "#/components/schemas/InventoryCollection"
-          }
+          :items => all_allowed_collections
         }
       }
     }
@@ -344,13 +357,13 @@ class OpenapiGenerator
         :data         => {
           :type  => "array",
           :items => {
-            :"$ref" => "#/components/schemas/InventoryObject"
+            "$ref" => "#/components/schemas/InventoryObject"
           }
         },
         :partial_data => {
           :type  => "array",
           :items => {
-            :"$ref" => "#/components/schemas/InventoryObject"
+            "$ref" => "#/components/schemas/InventoryObject"
           }
         }
       }
@@ -427,6 +440,7 @@ class OpenapiGenerator
     end
 
     inventory_collections.each do |_key, inventory_collection|
+      build_inventory_collection_schema(inventory_collection)
       build_schema(inventory_collection.model_class.to_s)
     end
 
@@ -434,10 +448,54 @@ class OpenapiGenerator
 
     new_content                             = openapi_contents
     new_content["paths"]                    = openapi_contents.dig("paths")
-    new_content["components"] ||= {}
+    new_content["components"]               ||= {}
     new_content["components"]["schemas"]    = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val }
     new_content["components"]["parameters"] = parameters.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["parameters"][name] || {} }
     File.write(openapi_file, JSON.pretty_generate(new_content) + "\n")
+  end
+
+  def build_inventory_collection_schema(inventory_collection)
+    schemas["InventoryCollection#{inventory_collection.name.to_s.singularize.camelize}"] = {
+      "InventoryCollection": {
+        "type":       "object",
+        "required":   ["name"],
+        "properties": {
+          "name":         {
+            "type": "string"
+          },
+          "data":         {
+            "type":  "array",
+            "items": {
+              "$ref": "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
+            }
+          },
+          "partial_data": {
+            "type":  "array",
+            "items": {
+              "$ref": "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
+            }
+          }
+        }
+      }
+    }
+  end
+
+  def all_allowed_collections
+    collections = inventory_collections.map do |_key, inventory_collection|
+      {:"$ref" => "#/components/schemas/InventoryCollection#{inventory_collection.name.to_s.singularize.camelize}"}
+    end
+
+    mapping = inventory_collections.each_with_object({}) do |(_key, inventory_collection), obj|
+      obj[inventory_collection.name] = "#/components/schemas/InventoryCollection#{inventory_collection.name.to_s.singularize.camelize}"
+    end
+
+    {
+      :anyOf => collections,
+      :discriminator => {
+        :propertyName => "name",
+        :mapping => mapping
+      },
+    }
   end
 
   # Remove references that are not used. E.g. ContainerNodeTagReference ? That reference is not allowed
