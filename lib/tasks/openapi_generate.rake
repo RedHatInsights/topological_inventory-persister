@@ -12,8 +12,8 @@ class OpenapiGenerator
   def api_version
     @api_version ||= Rails.application.routes.routes.each_with_object([]) do |route, array|
       matches = ActionDispatch::Routing::RouteWrapper
-                  .new(route)
-                  .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
+                .new(route)
+                .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
       array << matches[1] if matches
     end.max
   end
@@ -142,14 +142,14 @@ class OpenapiGenerator
       ],
       "properties" => {
         "inventory_collection_name" => {
-          "type" => "string",
+          "type"    => "string",
           # Seems like enum is not being validated by committee gem
           # "enum" => [inventory_collection.name]
           "pattern" => "^#{inventory_collection.name}$"
         },
         "reference"                 => lazy_find_reference(klass_name, inventory_collection, ref),
         "ref"                       => {
-          "type" => "string",
+          "type"    => "string",
           # Seems like enum is not being validated by committee gem
           # "enum" => [ref]
           "pattern" => "^#{ref}$"
@@ -306,17 +306,17 @@ class OpenapiGenerator
       :type       => "object",
       :required   => ["schema", "source"],
       :properties => {
-        :name   => {
+        :name                    => {
           :type => "string"
         },
-        :schema => {
+        :schema                  => {
           :"$ref" => "#/components/schemas/Schema"
         },
         # :source                  => {
         #   :"$ref" => "#/components/schemas/Source"
         # },
         :source                  => {
-          :type => "string",
+          :type => "string"
         },
         :refresh_state_uuid      => {
           :type   => "string",
@@ -450,7 +450,7 @@ class OpenapiGenerator
 
     new_content                             = openapi_contents
     new_content["paths"]                    = openapi_contents.dig("paths")
-    new_content["components"]               ||= {}
+    new_content["components"] ||= {}
     new_content["components"]["schemas"]    = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val }
     new_content["components"]["parameters"] = parameters.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["parameters"][name] || {} }
     File.write(openapi_file, JSON.pretty_generate(new_content) + "\n")
@@ -462,22 +462,22 @@ class OpenapiGenerator
 
   def build_inventory_collection_schema(inventory_collection)
     schemas["InventoryCollection#{inventory_collection.name.to_s.singularize.camelize}"] = {
-      "type":       "object",
-      "required":   ["name"],
-      "properties": {
-        "name":         {
-          "type": "string"
+      :type       => "object",
+      :required   => ["name"],
+      :properties => {
+        :name         => {
+          :type => "string"
         },
-        "data":         {
-          "type":  "array",
-          "items": {
-            "$ref": "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
+        :data         => {
+          :type  => "array",
+          :items => {
+            :"$ref" => "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
           }
         },
-        "partial_data": {
-          "type":  "array",
-          "items": {
-            "$ref": "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
+        :partial_data => {
+          :type  => "array",
+          :items => {
+            :"$ref" => "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
           }
         }
       }
@@ -485,7 +485,7 @@ class OpenapiGenerator
   end
 
   def all_allowed_collections
-    savable_inventory_collections = inventory_collections.select {|_key, value| savable_inventory_collection?(value) }
+    savable_inventory_collections = inventory_collections.select { |_key, value| savable_inventory_collection?(value) }
 
     collections = savable_inventory_collections.map do |_key, inventory_collection|
       {:"$ref" => "#/components/schemas/InventoryCollection#{inventory_collection.name.to_s.singularize.camelize}"}
@@ -500,7 +500,7 @@ class OpenapiGenerator
       :discriminator => {
         :propertyName => "name",
         :mapping      => mapping
-      },
+      }
     }
   end
 
