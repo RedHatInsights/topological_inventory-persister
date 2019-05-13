@@ -530,12 +530,12 @@ class OpenapiGenerator
 
   # Limits reference only for a certain attribute
   GENERATOR_LIMIT_REFERENCE_USAGE = {
-    "CrossLinkVmsReference" => ["lives_on"]
+    "CrossLinkVmReference" => ["lives_on"]
   }.freeze
 
   # Hardcode references for certain attributes
   GENERATOR_LIMIT_ATTRIBUTE_REFERENCES = {
-    "lives_on" => ["CrossLinkVmsReference"]
+    "lives_on" => ["CrossLinkVmReference"]
   }.freeze
 end
 
