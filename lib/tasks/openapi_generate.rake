@@ -440,6 +440,8 @@ class OpenapiGenerator
     end
 
     inventory_collections.each do |_key, inventory_collection|
+      next unless savable_inventory_collection?(inventory_collection)
+
       build_inventory_collection_schema(inventory_collection)
       build_schema(inventory_collection)
     end
@@ -452,6 +454,10 @@ class OpenapiGenerator
     new_content["components"]["schemas"]    = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val }
     new_content["components"]["parameters"] = parameters.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["parameters"][name] || {} }
     File.write(openapi_file, JSON.pretty_generate(new_content) + "\n")
+  end
+
+  def savable_inventory_collection?(inventory_collection)
+    inventory_collection.strategy == :local_db_find_missing_references
   end
 
   def build_inventory_collection_schema(inventory_collection)
@@ -479,11 +485,13 @@ class OpenapiGenerator
   end
 
   def all_allowed_collections
-    collections = inventory_collections.map do |_key, inventory_collection|
+    savable_inventory_collections = inventory_collections.select {|_key, value| savable_inventory_collection?(value) }
+
+    collections = savable_inventory_collections.map do |_key, inventory_collection|
       {:"$ref" => "#/components/schemas/InventoryCollection#{inventory_collection.name.to_s.singularize.camelize}"}
     end
 
-    mapping = inventory_collections.each_with_object({}) do |(_key, inventory_collection), obj|
+    mapping = savable_inventory_collections.each_with_object({}) do |(_key, inventory_collection), obj|
       obj[inventory_collection.name] = "#/components/schemas/InventoryCollection#{inventory_collection.name.to_s.singularize.camelize}"
     end
 
