@@ -456,24 +456,22 @@ class OpenapiGenerator
 
   def build_inventory_collection_schema(inventory_collection)
     schemas["InventoryCollection#{inventory_collection.name.to_s.singularize.camelize}"] = {
-      "InventoryCollection": {
-        "type":       "object",
-        "required":   ["name"],
-        "properties": {
-          "name":         {
-            "type": "string"
-          },
-          "data":         {
-            "type":  "array",
-            "items": {
-              "$ref": "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
-            }
-          },
-          "partial_data": {
-            "type":  "array",
-            "items": {
-              "$ref": "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
-            }
+      "type":       "object",
+      "required":   ["name"],
+      "properties": {
+        "name":         {
+          "type": "string"
+        },
+        "data":         {
+          "type":  "array",
+          "items": {
+            "$ref": "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
+          }
+        },
+        "partial_data": {
+          "type":  "array",
+          "items": {
+            "$ref": "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
           }
         }
       }
@@ -490,10 +488,10 @@ class OpenapiGenerator
     end
 
     {
-      :anyOf => collections,
+      :anyOf         => collections,
       :discriminator => {
         :propertyName => "name",
-        :mapping => mapping
+        :mapping      => mapping
       },
     }
   end
