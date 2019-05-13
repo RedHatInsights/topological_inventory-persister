@@ -42,8 +42,8 @@ class OpenapiGenerator
     @reference_types ||= {}
   end
 
-  def build_schema(klass_name)
-    schemas[klass_name] = openapi_schema(klass_name)
+  def build_schema(inventory_collection)
+    schemas[inventory_collection.name.to_s.singularize.camelize] = openapi_schema(inventory_collection)
   end
 
   # Collects what types of reference_types are there for each inventory collection (e.g. primary, by_name, etc.)
@@ -92,9 +92,9 @@ class OpenapiGenerator
     (required_cols & used_attrs).sort
   end
 
-  def openapi_schema(klass_name)
-    model      = klass_name.constantize
-    properties = openapi_schema_properties(klass_name)
+  def openapi_schema(inventory_collection)
+    model      = inventory_collection.model_class
+    properties = openapi_schema_properties(inventory_collection.model_class.to_s)
 
     {
       "allOf" => [
@@ -441,7 +441,7 @@ class OpenapiGenerator
 
     inventory_collections.each do |_key, inventory_collection|
       build_inventory_collection_schema(inventory_collection)
-      build_schema(inventory_collection.model_class.to_s)
+      build_schema(inventory_collection)
     end
 
     cleanup_unused_schemas!
