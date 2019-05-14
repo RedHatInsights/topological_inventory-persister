@@ -412,24 +412,24 @@ class OpenapiGenerator
       }
     }
 
-    schemas["Source"] = {
-      :type       => "object",
-      :required   => [
-        "id",
-        "name"
-      ],
-      :properties => {
-        :id   => {
-          :type    => "string",
-          :format  => "uuid",
-          :example => "d290f1ee-6c54-4b01-90e6-d701748f0851"
-        },
-        :name => {
-          :type    => "string",
-          :example => "Widget Adapter"
-        }
-      }
-    }
+    # schemas["Source"] = {
+    #   :type       => "object",
+    #   :required   => [
+    #     "id",
+    #     "name"
+    #   ],
+    #   :properties => {
+    #     :id   => {
+    #       :type    => "string",
+    #       :format  => "uuid",
+    #       :example => "d290f1ee-6c54-4b01-90e6-d701748f0851"
+    #     },
+    #     :name => {
+    #       :type    => "string",
+    #       :example => "Widget Adapter"
+    #     }
+    #   }
+    # }
 
     inventory_collections.each do |_key, inventory_collection|
       build_reference_types(inventory_collection)
