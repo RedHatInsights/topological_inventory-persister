@@ -8,16 +8,6 @@ class OpenapiGenerator
     openapi_path.split("/")[1..-1]
   end
 
-  # Let's get the latest api version based on the openapi.json routes
-  def api_version
-    @api_version ||= Rails.application.routes.routes.each_with_object([]) do |route, array|
-      matches = ActionDispatch::Routing::RouteWrapper
-                  .new(route)
-                  .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
-      array << matches[1] if matches
-    end.max
-  end
-
   def openapi_file
     # TODO(lsmola) how does topo API loads the version?
     # @openapi_file ||= Pathname.new(__dir__).join("../../public/doc/openapi-3-v#{api_version}.json").to_s
