@@ -233,8 +233,6 @@ class OpenapiGenerator
         end
       end
 
-      # require 'byebug'; byebug if key.to_s == "cpu_limit"
-
       # Take existing attrs, that we won't generate
       ['example', 'format', 'readOnly', 'title', 'description'].each do |property_key|
         property_value                 = openapi_contents.dig(*path_parts(SCHEMAS_PATH), klass_name, "allOf", 1, "properties", key, property_key)
