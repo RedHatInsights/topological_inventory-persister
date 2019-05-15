@@ -12,8 +12,8 @@ class OpenapiGenerator
   def api_version
     @api_version ||= Rails.application.routes.routes.each_with_object([]) do |route, array|
       matches = ActionDispatch::Routing::RouteWrapper
-                .new(route)
-                .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
+                  .new(route)
+                  .path.match(/\A.*\/v(\d+.\d+)\/openapi.json.*\z/)
       array << matches[1] if matches
     end.max
   end
@@ -142,14 +142,14 @@ class OpenapiGenerator
       ],
       "properties" => {
         "inventory_collection_name" => {
-          "type"    => "string",
+          "type" => "string",
           # Seems like enum is not being validated by committee gem
           # "enum" => [inventory_collection.name]
           "pattern" => "^#{inventory_collection.name}$"
         },
         "reference"                 => lazy_find_reference(klass_name, inventory_collection, ref),
         "ref"                       => {
-          "type"    => "string",
+          "type" => "string",
           # Seems like enum is not being validated by committee gem
           # "enum" => [ref]
           "pattern" => "^#{ref}$"
@@ -212,7 +212,11 @@ class OpenapiGenerator
              end
 
       if value.null
-        refs["nullable"] = true
+        # It's not allowed to have nullable => true next to ref, it's valid with using allOf, having 1 value
+        refs = {
+          "allOf"    => [refs],
+          "nullable" => true
+        }
       end
       [foreign_key.name.to_s, refs]
     else
@@ -306,10 +310,10 @@ class OpenapiGenerator
       :type       => "object",
       :required   => ["schema", "source"],
       :properties => {
-        :name                    => {
+        :name   => {
           :type => "string"
         },
-        :schema                  => {
+        :schema => {
           :"$ref" => "#/components/schemas/Schema"
         },
         # :source                  => {
@@ -450,7 +454,7 @@ class OpenapiGenerator
 
     new_content                             = openapi_contents
     new_content["paths"]                    = openapi_contents.dig("paths")
-    new_content["components"] ||= {}
+    new_content["components"]               ||= {}
     new_content["components"]["schemas"]    = schemas.sort.each_with_object({}) { |(name, val), h| h[name] = val }
     new_content["components"]["parameters"] = parameters.sort.each_with_object({}) { |(name, val), h| h[name] = val || openapi_contents["components"]["parameters"][name] || {} }
     File.write(openapi_file, JSON.pretty_generate(new_content) + "\n")
