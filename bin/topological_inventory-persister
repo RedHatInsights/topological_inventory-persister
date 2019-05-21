@@ -5,11 +5,15 @@ require "bundler/setup"
 require "topological_inventory/persister/worker"
 require "topological_inventory/core/ar_helper"
 
-queue_host = ENV["QUEUE_HOST"] || "localhost"
-queue_port = ENV["QUEUE_PORT"] || 9092
+opts = {
+  :host => ENV["QUEUE_HOST"] || "localhost",
+  :port => ENV["QUEUE_PORT"] || 9092,
+  :metrics_port => ENV["METRICS_PORT"] || 9394 # 0 disables metrics
+}
 
 TopologicalInventory::Core::ArHelper.database_yaml_path = Pathname.new(__dir__).join("../config/database.yml")
 TopologicalInventory::Core::ArHelper.load_environment!
 
-persister_worker = TopologicalInventory::Persister::Worker.new(:host => queue_host, :port => queue_port)
+
+persister_worker = TopologicalInventory::Persister::Worker.new(opts)
 persister_worker.run
