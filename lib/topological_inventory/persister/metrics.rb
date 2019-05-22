@@ -8,21 +8,23 @@ module TopologicalInventory
   module Persister
     class Metrics
       def initialize(port = 9394)
+        return if port == 0
+
         configure_server(port)
         configure_metrics
       end
 
       def record_process(success = true)
-        @process_counter.observe(1, :result => success ? "success" : "error")
+        @process_counter&.observe(1, :result => success ? "success" : "error")
       end
 
       def record_process_timing
         time = Benchmark.realtime { yield }
-        @process_timer.observe(time)
+        @process_timer&.observe(time)
       end
 
       def stop_server
-        @server.stop
+        @server&.stop
       end
 
       private

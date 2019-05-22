@@ -10,11 +10,12 @@ module TopologicalInventory
     class Worker
       include Logging
 
-      def initialize(messaging_client_opts = {})
+      def initialize(opts = {})
+        messaging_client_opts = opts.select { |k, _| %i[host port].include?(k) }
         self.messaging_client_opts = default_messaging_opts.merge(messaging_client_opts)
 
         InventoryRefresh.logger = logger
-        self.metrics = TopologicalInventory::Persister::Metrics.new
+        self.metrics = TopologicalInventory::Persister::Metrics.new(opts[:metrics_port])
       end
 
       def run
