@@ -15,7 +15,7 @@ module TopologicalInventory
         self.messaging_client_opts = default_messaging_opts.merge(messaging_client_opts)
 
         InventoryRefresh.logger = logger
-        self.metrics = TopologicalInventory::Persister::Metrics.new(opts[:metrics_port].to_i)
+        self.metrics = TopologicalInventory::Persister::Metrics.new(opts[:metrics_port])
       end
 
       def run

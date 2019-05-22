@@ -7,8 +7,8 @@ require "topological_inventory/core/ar_helper"
 
 opts = {
   :host => ENV["QUEUE_HOST"] || "localhost",
-  :port => ENV["QUEUE_PORT"] || 9092,
-  :metrics_port => ENV["METRICS_PORT"] || 9394 # 0 disables metrics
+  :port => (ENV["QUEUE_PORT"] || 9092).to_i,
+  :metrics_port => (ENV["METRICS_PORT"] || 9394).to_i # 0 disables metrics
 }
 
 TopologicalInventory::Core::ArHelper.database_yaml_path = Pathname.new(__dir__).join("../config/database.yml")
