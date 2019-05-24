@@ -7,7 +7,6 @@ gem "manageiq-loggers",    "~> 0.1.0"
 gem "manageiq-messaging",  "~> 0.1.2"
 gem "prometheus_exporter", "~> 0.4.5"
 
-gem "inventory_refresh",          :git => "https://github.com/ManageIQ/inventory_refresh",          :branch => "master"
 gem "topological_inventory-core", :git => "https://github.com/ManageIQ/topological_inventory-core", :branch => "master"
 
 group :development do
