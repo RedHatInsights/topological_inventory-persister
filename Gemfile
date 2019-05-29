@@ -3,7 +3,8 @@ source 'https://rubygems.org'
 plugin 'bundler-inject', '~> 1.1'
 require File.join(Bundler::Plugin.index.load_paths("bundler-inject")[0], "bundler-inject") rescue nil
 
-gem "manageiq-loggers",    "~> 0.1.0"
+gem "cloudwatchlogger",    "~> 0.2"
+gem "manageiq-loggers",    "~> 0.3.0"
 gem "manageiq-messaging",  "~> 0.1.2"
 gem "prometheus_exporter", "~> 0.4.5"
 
