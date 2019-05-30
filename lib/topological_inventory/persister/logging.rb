@@ -7,7 +7,7 @@ module TopologicalInventory
     end
 
     def self.logger
-      @logger ||= ManageIQ::Loggers::Container.new
+      @logger ||= ManageIQ::Loggers::CloudWatch.new
     end
 
     module Logging
