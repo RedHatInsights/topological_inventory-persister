@@ -125,6 +125,7 @@ class OpenapiGenerator
   def lazy_find(klass_name, inventory_collection, ref = :manager_ref)
     {
       "type"       => "object",
+      "nullable"   => "false",
       "required"   => [
         "inventory_collection_name",
         "reference",
@@ -193,7 +194,7 @@ class OpenapiGenerator
                #     by_name: '#/components/schemas/ContainerNodeReferenceByName'
                #     manager_ref: '#/components/schemas/ContainerNodeReference'
                {
-                 "oneOf" => ref_types.map { |ref_type| {"$ref" => "##{SCHEMAS_PATH}/#{ref_type}"} }
+                 "anyOf" => ref_types.map { |ref_type| {"$ref" => "##{SCHEMAS_PATH}/#{ref_type}"} }
                }
              else
                raise "Can't find allowed references for #{klass_name}, attribute: #{foreign_key.name}" if ref_types.empty?
@@ -201,11 +202,16 @@ class OpenapiGenerator
                {"$ref" => "##{SCHEMAS_PATH}/#{ref_types.first}"}
              end
 
-      if value.null
-        # It's not allowed to have nullable => true next to ref, it's valid with using allOf, having 1 value
+      if !value.null
+        # Add extra validation for attribute having NOT_NULL constraint
         refs = {
-          "allOf"    => [refs],
-          "nullable" => true
+          "allOf" => [
+            refs,
+            {
+              "type"     => "object",
+              "nullable" => "false"
+            }
+          ],
         }
       end
       [foreign_key.name.to_s, refs]
