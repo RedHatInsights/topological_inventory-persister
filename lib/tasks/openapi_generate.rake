@@ -92,9 +92,10 @@ class OpenapiGenerator
           :"$ref" => "#/components/schemas/InventoryObject"
         },
         {
-          "type"       => "object",
-          "required"   => required_cols(model, properties.keys),
-          "properties" => properties
+          "type"                 => "object",
+          "required"             => required_cols(model, properties.keys),
+          "properties"           => properties,
+          "additionalProperties" => false
         }
       ]
     }
@@ -124,14 +125,14 @@ class OpenapiGenerator
 
   def lazy_find(klass_name, inventory_collection, ref = :manager_ref)
     {
-      "type"       => "object",
-      "nullable"   => "false",
-      "required"   => [
+      "type"                 => "object",
+      "nullable"             => "false",
+      "required"             => [
         "inventory_collection_name",
         "reference",
         "ref"
       ],
-      "properties" => {
+      "properties"           => {
         "inventory_collection_name" => {
           "type" => "string",
           # Seems like enum is not being validated by committee gem
@@ -145,7 +146,8 @@ class OpenapiGenerator
           # "enum" => [ref]
           "pattern" => "^#{ref}$"
         }
-      }
+      },
+      "additionalProperties" => false
     }
   end
 
@@ -161,9 +163,10 @@ class OpenapiGenerator
     end
 
     {
-      "type"       => "object",
-      "required"   => attrs.map(&:to_s),
-      "properties" => openapi_schema_properties(klass_name, columns.map(&:to_s))
+      "type"                 => "object",
+      "required"             => attrs.map(&:to_s),
+      "properties"           => openapi_schema_properties(klass_name, columns.map(&:to_s)),
+      "additionalProperties" => false
     }
   end
 
@@ -208,8 +211,9 @@ class OpenapiGenerator
           "allOf" => [
             refs,
             {
-              "type"     => "object",
-              "nullable" => "false"
+              "type"                 => "object",
+              "nullable"             => "false",
+              "additionalProperties" => false
             }
           ],
         }
@@ -342,13 +346,14 @@ class OpenapiGenerator
           :type  => "array",
           :items => all_allowed_collections
         }
-      }
+      },
+      :additionalProperties => false
     }
 
     schemas["InventoryCollection"] = {
-      :type       => "object",
-      :required   => ["name"],
-      :properties => {
+      :type                 => "object",
+      :required             => ["name"],
+      :properties           => {
         :name         => {
           :type => "string"
         },
@@ -364,17 +369,19 @@ class OpenapiGenerator
             "$ref" => "#/components/schemas/InventoryObject"
           }
         }
-      }
+      },
+      :additionalProperties => false
     }
 
     schemas["InventoryObject"] = {
-      :type => "object"
+      :type                 => "object",
+      :additionalProperties => false
     }
 
     schemas["InventoryObjectLazy"] = {
-      :type       => "object",
-      :required   => ["inventory_collection_name", "reference", "ref"],
-      :properties => {
+      :type                 => "object",
+      :required             => ["inventory_collection_name", "reference", "ref"],
+      :properties           => {
         :inventory_collection_name => {
           :type => "string"
         },
@@ -398,16 +405,18 @@ class OpenapiGenerator
         # "transform_nested_lazy_finds": {
         #   "type": "boolean"
         # }
-      }
+      },
+      :additionalProperties => false
     }
 
     schemas["Schema"] = {
-      :type       => "object",
-      :properties => {
+      :type                 => "object",
+      :properties           => {
         :name => {
           :type => "string"
         }
-      }
+      },
+      :additionalProperties => false
     }
 
     # schemas["Source"] = {
@@ -460,9 +469,9 @@ class OpenapiGenerator
 
   def build_inventory_collection_schema(inventory_collection)
     schemas["InventoryCollection#{inventory_collection.name.to_s.singularize.camelize}"] = {
-      :type       => "object",
-      :required   => ["name"],
-      :properties => {
+      :type                 => "object",
+      :required             => ["name"],
+      :properties           => {
         :name         => {
           :type => "string"
         },
@@ -478,7 +487,8 @@ class OpenapiGenerator
             :"$ref" => "#/components/schemas/#{inventory_collection.name.to_s.singularize.camelize}"
           }
         }
-      }
+      },
+      :additionalProperties => false
     }
   end
 
