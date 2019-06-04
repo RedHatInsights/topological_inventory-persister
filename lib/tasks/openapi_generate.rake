@@ -126,7 +126,7 @@ class OpenapiGenerator
   def lazy_find(klass_name, inventory_collection, ref = :manager_ref)
     {
       "type"                 => "object",
-      "nullable"             => false,
+      "nullable"             => true,
       "required"             => [
         "inventory_collection_name",
         "reference",
