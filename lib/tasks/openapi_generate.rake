@@ -320,6 +320,9 @@ class OpenapiGenerator
         :source                  => {
           :type => "string"
         },
+        :source_type             => {
+          :type => "string"
+        },
         :refresh_state_uuid      => {
           :type   => "string",
           :format => "uuid"
