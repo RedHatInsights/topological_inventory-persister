@@ -18,7 +18,7 @@ describe TopologicalInventory::Persister::Worker do
   end
 
   context "#run" do
-    let(:message) { ManageIQ::Messaging::ReceivedMessage.new(nil, nil, inventory, nil, client) }
+    let(:message) { ManageIQ::Messaging::ReceivedMessage.new(nil, nil, inventory, nil, nil, client) }
 
     before do
       allow(ManageIQ::Messaging::Client).to receive(:open).and_return(client)
