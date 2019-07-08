@@ -40,7 +40,10 @@ module TopologicalInventory
       attr_accessor :messaging_client_opts, :client, :metrics
 
       def process_message(client, msg)
-        TopologicalInventory::Persister::Workflow.new(load_persister(msg.payload), client, msg.payload).execute!
+        payload = msg.payload
+        payload = JSON.parse(payload) if payload.is_a?(String)
+
+        TopologicalInventory::Persister::Workflow.new(load_persister(payload), client, payload).execute!
       rescue PG::ConnectionBad, Kafka::DeliveryFailed, Kafka::ConnectionError => e
         log_err_and_send_metric(e)
         raise
