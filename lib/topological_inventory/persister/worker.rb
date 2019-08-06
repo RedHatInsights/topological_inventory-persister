@@ -1,5 +1,6 @@
 require "inventory_refresh"
 require "manageiq-messaging"
+require "topological_inventory/persister/exception"
 require "topological_inventory/persister/logging"
 require "topological_inventory/persister/workflow"
 require "topological_inventory/persister/metrics"
@@ -28,8 +29,7 @@ module TopologicalInventory
           metrics.record_process_timing { process_message(client, msg) }
         end
       rescue => e
-        logger.error(e.message)
-        logger.error(e.backtrace.join("\n"))
+        logger.error("#{e.class}:  #{e.message}\n#{e.backtrace.join("\n")}")
       ensure
         client&.close
         metrics&.stop_server
@@ -53,6 +53,8 @@ module TopologicalInventory
         if e.message =~ /^PG::UnableToSend/
           raise
         end
+      rescue TopologicalInventory::Persister::Exception::SourceUidNotFound => e
+        log_warn(e)
       rescue => e
         log_err_and_send_metric(e)
         nil
@@ -62,17 +64,22 @@ module TopologicalInventory
 
       def log_err_and_send_metric(e)
         metrics.record_process(false)
-        logger.error("#{e.class}:  #{e.message}")
-        logger.error(e.backtrace.join("\n"))
+        logger.error("#{e.class}:  #{e.message}\n#{e.backtrace.join("\n")}")
+      end
+
+      def log_warn(e)
+        logger.warn("#{e.class}:  #{e.message}\n#{e.backtrace.join("\n")}")
       end
 
       def load_persister(payload)
         source = Source.find_by(:uid => payload["source"])
-        raise "Couldn't find source with uid #{payload["source"]}" if source.nil?
+        raise(TopologicalInventory::Persister::Exception::SourceUidNotFound,
+              "Couldn't find source with uid #{payload["source"]}") if source.nil?
 
         schema_name  = payload.dig("schema", "name")
         schema_klass = schema_klass_name(schema_name).safe_constantize
-        raise "Invalid schema #{schema_name}" if schema_klass.nil?
+        raise(TopologicalInventory::Persister::Exception::InvalidSchemaName,
+              "Invalid schema #{schema_name}") if schema_klass.nil?
 
         schema_klass.from_hash(payload, source)
       end
