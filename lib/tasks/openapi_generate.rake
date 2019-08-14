@@ -244,7 +244,7 @@ class OpenapiGenerator
       end
 
       # Take existing attrs, that we won't generate
-      ['example', 'format', 'readOnly', 'title', 'description'].each do |property_key|
+      ['example', 'format', 'readOnly', 'title', 'description', 'enum'].each do |property_key|
         property_value                 = openapi_contents.dig(*path_parts(SCHEMAS_PATH), klass_name, "allOf", 1, "properties", key, property_key)
         properties_value[property_key] = property_value if property_value
       end
@@ -552,7 +552,8 @@ class OpenapiGenerator
 
   # Hardcode references for certain attributes
   GENERATOR_LIMIT_ATTRIBUTE_REFERENCES = {
-    "lives_on" => ["CrossLinkVmReference"]
+    "lives_on" => ["CrossLinkVmReference"],
+    "device"   => ["VmReference", "HostReference"]
   }.freeze
 end
 
