@@ -340,7 +340,10 @@ class OpenapiGenerator
               :type => "object"
             },
             {
-              :type => "array"
+              :type  => "array",
+              :items => {
+                :type => "string"
+              }
             }
           ]
 
