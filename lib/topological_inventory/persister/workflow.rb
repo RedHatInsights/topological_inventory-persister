@@ -39,7 +39,7 @@ module TopologicalInventory
           :association                 => :refresh_states,
           :create_only                 => true,
           :model_class                 => RefreshState,
-          :inventory_object_attributes => %i(ems_id uuid status source_id tenant_id),
+          :inventory_object_attributes => %i(uuid status source_id tenant_id),
           :default_values              => {
             :source_id => manager.id,
             :tenant_id => manager.tenant_id,
