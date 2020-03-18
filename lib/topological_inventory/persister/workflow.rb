@@ -24,12 +24,17 @@ module TopologicalInventory
 
       attr_reader :persister, :messaging_client, :payload
       delegate :inventory_collections,
+               :ingress_api_sent_at,
                :manager,
                :persist!,
+               :persister_started_at, :persister_finished_at,
                :refresh_state_uuid,
+               :refresh_state_started_at, :refresh_state_sent_at,
                :refresh_state_part_uuid,
-               :total_parts,
+               :refresh_state_part_collected_at, :refresh_state_part_sent_at,
+               :refresh_time_tracking,
                :sweep_scope,
+               :total_parts,
                :to => :persister
 
       def define_refresh_state_ics
@@ -100,9 +105,13 @@ module TopologicalInventory
       # Persists InventoryCollection objects into the DB
       def persist_collections!
         upsert_refresh_state_records(:status => :started, :refresh_state_status => :started)
+        link_data_to_refresh_state_part
 
         persist!
         send_changes_to_queue!
+
+        persister.persister_finished_at = Time.now.utc.to_datetime.to_s
+        log_refresh_time_tracking(:refresh_state_part)
 
         upsert_refresh_state_records(:status => :finished)
       rescue StandardError => e
@@ -185,7 +194,13 @@ module TopologicalInventory
         else
           update(refresh_state, :status => :sweeping)
           InventoryRefresh::SaveInventory.sweep_inactive_records(manager, inventory_collections, sweep_scope, refresh_state)
-          update(refresh_state, :status => :finished)
+
+          persister.persister_finished_at = Time.now.utc.to_datetime.to_s
+          log_refresh_time_tracking(:refresh_state)
+          update(refresh_state,
+                 :status      => :finished,
+                 :started_at  => refresh_state_started_at,
+                 :finished_at => persister_finished_at)
         end
       end
 
@@ -215,6 +230,42 @@ module TopologicalInventory
 
       def sweep_retry_count_limit
         100
+      end
+
+      def link_data_to_refresh_state_part
+        refresh_state_part = ::RefreshStatePart.find_by(:uuid => refresh_state_part_uuid)
+        if refresh_state_part.present?
+          ics = inventory_collections.select { |ic| ic.data.present? }
+          ics.each do |ic|
+            ic.data.each do |inventory_object|
+              inventory_object.data[:refresh_state_part_id] = refresh_state_part.id
+            end
+          end
+        end
+      end
+
+      # @param type [Symbol] :refresh_state_part | :refresh_state
+      def log_refresh_time_tracking(type)
+        msg = "Refresh tracking: State: #{refresh_state_uuid} "
+        msg += "| Part: #{refresh_state_part_uuid} " if type == :refresh_state_part
+
+        data = if type == :refresh_state_part
+                 %i[refresh_state_part_collected_at
+                    refresh_state_part_sent_at
+                    ingress_api_sent_at
+                    persister_started_at
+                    persister_finished_at
+                   ]
+               else
+                 %i[refresh_state_started_at
+                    refresh_state_sent_at
+                    ingress_api_sent_at
+                    persister_started_at
+                    persister_finished_at
+                   ]
+               end
+        msg += "[#{data.collect {|name| "#{name}: #{send(name)}"}.join(' | ')}]"
+        logger.info(msg)
       end
     end
   end
