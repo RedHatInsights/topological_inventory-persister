@@ -334,6 +334,26 @@ class OpenapiGenerator
         :total_parts             => {
           :type => "integer"
         },
+        :refresh_state_part_collected_at    => {
+          :type   => "string",
+          :format => "date-time"
+        },
+        :refresh_state_part_sent_at       => {
+          :type   => "string",
+          :format => "date-time"
+        },
+        :refresh_state_started_at    => {
+          :type   => "string",
+          :format => "date-time"
+        },
+        :refresh_state_sent_at       => {
+          :type   => "string",
+          :format => "date-time"
+        },
+        :ingress_api_sent_at     => {
+          :type   => "string",
+          :format => "date-time"
+        },
         :sweep_scope             => {
           :oneOf => [
             {
@@ -539,7 +559,7 @@ class OpenapiGenerator
   end
 
   GENERATOR_BLACKLIST_ATTRIBUTES = [
-    :id, :resource_timestamps, :resource_timestamps_max, :tenant_id, :source_id, :created_at, :updated_at, :last_seen_at
+    :id, :resource_timestamps, :resource_timestamps_max, :tenant_id, :source_id, :created_at, :updated_at, :last_seen_at, :refresh_state_part_id
   ].to_set.freeze
 
   GENERATOR_ALLOW_BLACKLISTED_ATTRIBUTES = {}.freeze
