@@ -8,7 +8,7 @@ gem "manageiq-loggers",    "~> 0.4.0", ">= 0.4.2"
 gem "manageiq-messaging",  "~> 0.1.2"
 gem "prometheus_exporter", "~> 0.4.5"
 
-gem "topological_inventory-core", "~> 1.1.1"
+gem "topological_inventory-core", "~> 1.1.2"
 
 group :development do
   gem "rspec-rails", "~>3.8"
