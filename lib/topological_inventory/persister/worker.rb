@@ -98,8 +98,7 @@ module TopologicalInventory
       def default_messaging_opts
         {
           :protocol   => :Kafka,
-          :client_ref => "persister-worker",
-          :group_ref  => "persister-worker",
+          :client_ref => ENV['HOSTNAME'].presence || SecureRandom.hex(4),
           :encoding   => "json",
         }
       end
