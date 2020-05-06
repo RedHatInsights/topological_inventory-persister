@@ -109,6 +109,7 @@ module TopologicalInventory
 
         persist!
         send_changes_to_queue!
+        send_task_updates_to_queue!
 
         persister.persister_finished_at = Time.now.utc.to_datetime.to_s
         log_refresh_time_tracking(:refresh_state_part)
@@ -127,6 +128,10 @@ module TopologicalInventory
         }
 
         message[:payload] = persister.inventory_collections.select { |x| x.name }.index_by(&:name).transform_values! do |x|
+          # service_instance_tasks' updated_records contain custom hashes
+          # filled by custom_save_block (used by Workflow.send_task_updates_to_queue!)
+          next if x.name == :service_instance_tasks
+
           hash = {}
           hash[:created] = x.created_records unless x.created_records.empty?
           hash[:updated] = x.updated_records unless x.updated_records.empty?
@@ -139,6 +144,22 @@ module TopologicalInventory
           :message => "event",
           :payload => message
         )
+      end
+
+      def send_task_updates_to_queue!
+        tasks_ic = persister.inventory_collections.detect { |x| x.name == :service_instance_tasks }
+        return if tasks_ic.nil?
+
+        tasks_ic.updated_records.to_a.each do |payload|
+          forwardable_headers = payload.delete(:forwardable_headers)
+
+          messaging_client.publish_topic(
+            :service => "platform.topological-inventory.task-output-stream",
+            :event   => "Task.update",
+            :payload => payload,
+            :headers => forwardable_headers
+          )
+        end
       end
 
       def update(record, data)
