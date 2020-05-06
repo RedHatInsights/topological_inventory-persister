@@ -151,13 +151,13 @@ module TopologicalInventory
         return if tasks_ic.nil?
 
         tasks_ic.updated_records.to_a.each do |payload|
-          request_id = payload.delete(:x_rh_insights_request)
+          forwardable_headers = payload.delete(:forwardable_headers)
 
           messaging_client.publish_topic(
             :service => "platform.topological-inventory.task-output-stream",
             :event   => "Task.update",
             :payload => payload,
-            :headers => {'x-rh-insights-request-id' => request_id}
+            :headers => forwardable_headers
           )
         end
       end
