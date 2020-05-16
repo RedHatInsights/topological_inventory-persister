@@ -5,7 +5,7 @@ Short description and motivation.
 [![Build Status](https://travis-ci.org/RedHatInsights/topological_inventory-persister.svg)](https://travis-ci.org/RedHatInsights/topological_inventory-persister)
 [![Maintainability](https://api.codeclimate.com/v1/badges/1b3b144efe20144d96e1/maintainability)](https://codeclimate.com/github/RedHatInsights/topological_inventory-persister/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/1b3b144efe20144d96e1/test_coverage)](https://codeclimate.com/github/RedHatInsights/topological_inventory-persister/test_coverage)
-[![Security](https://hakiri.io/github/ManageIQ/topological_inventory-persister/master.svg)](https://hakiri.io/github/ManageIQ/topological_inventory-persister/master)
+[![security](https://hakiri.io/github/RedHatInsights/topological_inventory-persister/master.svg)](https://hakiri.io/github/RedHatInsights/topological_inventory-persister/master)
 
 ## Usage
 
