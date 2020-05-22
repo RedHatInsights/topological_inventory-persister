@@ -56,11 +56,14 @@ class OpenapiGenerator
 
   def add_primary_reference_schema(inventory_collection)
     class_name                                                                 = inventory_collection.model_class.to_s
+    return if class_name.blank?
+
     schemas["#{inventory_collection.name.to_s.singularize.camelize}Reference"] = lazy_find(class_name, inventory_collection)
   end
 
   def add_secondary_reference_schema(inventory_collection, key)
     class_name = inventory_collection.model_class.to_s
+    return if class_name.blank?
 
     schemas["#{inventory_collection.name.to_s.singularize.camelize}Reference#{key.to_s.camelize}"] = lazy_find(class_name, inventory_collection, key)
   end
@@ -474,6 +477,7 @@ class OpenapiGenerator
 
     inventory_collections.each do |_key, inventory_collection|
       next unless savable_inventory_collection?(inventory_collection)
+      next if inventory_collection.model_class.nil?
 
       build_inventory_collection_schema(inventory_collection)
       build_schema(inventory_collection)
