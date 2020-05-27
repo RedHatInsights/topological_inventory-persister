@@ -11,7 +11,7 @@ class OpenapiGenerator
   def openapi_file
     # TODO(lsmola) how does topo API loads the version?
     # @openapi_file ||= Pathname.new(__dir__).join("../../public/doc/openapi-3-v#{api_version}.json").to_s
-    @openapi_file ||= Pathname.new(__dir__).join("../../../topological_inventory-ingress_api/public/doc/openapi-3-v0.0.2.json").to_s
+    @openapi_file ||= Pathname.new(__dir__).join("../../../topological_inventory-ingress_api/public/doc/openapi-3-v1.0.2.json").to_s
   end
 
   def openapi_contents

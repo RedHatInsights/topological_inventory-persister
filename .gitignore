@@ -10,8 +10,12 @@
 /bundler.d/
 /config/database.yml
 /coverage/
+/db/schema.rb
 /doc/
 /log/
 /pkg/
 /spec/reports/
 /tmp/
+/v2_key
+/public/doc/*.jar
+/public/doc/openapi*generator.yaml
