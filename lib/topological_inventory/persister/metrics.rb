@@ -15,7 +15,15 @@ module TopologicalInventory
       end
 
       def record_process(success = true)
-        @process_counter&.observe(1, :result => success ? "success" : "error")
+        @process_counter&.observe(1, :result => case success
+                                                when true
+                                                  "success"
+                                                when false
+                                                  "error"
+                                                when :skipped
+                                                  "skipped"
+                                                end
+        )
       end
 
       def record_process_timing

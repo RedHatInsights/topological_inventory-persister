@@ -357,6 +357,9 @@ class OpenapiGenerator
           :type   => "string",
           :format => "date-time"
         },
+        :refresh_type            => {
+          :type => "string"
+        },
         :sweep_scope             => {
           :oneOf => [
             {
