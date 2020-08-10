@@ -43,6 +43,14 @@ module TopologicalInventory
         payload = msg.payload
         payload = JSON.parse(payload) if payload.is_a?(String)
 
+        # Skip if it's been too long since ingress sent the data and it is a full-refresh
+        # i.e. this data is probably stale and theres new data most likely collected
+        if skip_message?(payload)
+          logger.debug("Skipping full-refresh, message outside of time threshold")
+          metrics.record_process(:skipped)
+          return
+        end
+
         TopologicalInventory::Persister::Workflow.new(load_persister(payload), client, payload).execute!
       rescue PG::ConnectionBad, Kafka::DeliveryFailed, Kafka::ConnectionError => e
         log_err_and_send_metric(e)
@@ -101,6 +109,16 @@ module TopologicalInventory
           :client_ref => ENV['HOSTNAME'].presence || SecureRandom.hex(4),
           :encoding   => "json",
         }
+      end
+
+      def skip_message?(payload)
+        payload["refresh_type"] == "full-refresh" && payload["ingress_api_sent_at"].to_time <= timeout
+      rescue
+        false
+      end
+
+      def timeout
+        (ENV['PERSISTER_TIMEOUT']&.to_i || 60).minutes.ago
       end
     end
   end
