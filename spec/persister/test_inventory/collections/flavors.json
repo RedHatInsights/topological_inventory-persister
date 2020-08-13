@@ -12,7 +12,47 @@
       "data": [
         {
           "source_ref": "m5d.12xlarge",
-          "name": "m5d.12xlarge"
+          "name": "m5d.12xlarge",
+          "disk_size": 966367641600,
+          "memory": 206158430208,
+          "disk_count": 2,
+          "cpus": 48,
+          "extra": {
+            "prices": {
+              "OnDemand": {
+                "22PCVUMSTSHECWJD.JRTCKXETXF": {
+                  "sku": "22PCVUMSTSHECWJD",
+                  "effectiveDate": "2018-12-01T00:00:00Z",
+                  "offerTermCode": "JRTCKXETXF",
+                  "termAttributes": {},
+                  "priceDimensions": {
+                    "22PCVUMSTSHECWJD.JRTCKXETXF.6YS6EN2CT7": {
+                      "unit": "Hrs",
+                      "endRange": "Inf",
+                      "rateCode": "22PCVUMSTSHECWJD.JRTCKXETXF.6YS6EN2CT7",
+                      "appliesTo": [],
+                      "beginRange": "0",
+                      "description": "$2.712 per On Demand Linux m5d.12xlarge Instance Hour",
+                      "pricePerUnit": {
+                        "USD": "2.7120000000"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "attributes": {
+              "ecu": "173",
+              "vcpu": "48",
+              "memory": "192 GiB",
+              "storage": "2 x 900 NVMe SSD",
+              "clockSpeed": "2.5 GHz",
+              "physicalProcessor": "Intel Xeon Platinum 8175",
+              "processorFeatures": "Intel AVX, Intel AVX2, Intel AVX512, Intel Turbo",
+              "networkPerformance": "10 Gigabit",
+              "dedicatedEbsThroughput": "6000 Mbps"
+            }
+          }
         },
         {
           "source_ref": "m5a.12xlarge",
