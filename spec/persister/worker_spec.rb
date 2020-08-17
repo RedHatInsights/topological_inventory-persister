@@ -26,12 +26,13 @@ describe TopologicalInventory::Persister::Worker do
       allow(client).to receive(:publish_message)
       allow(client).to receive(:subscribe_topic).and_yield(message)
 
-      described_class.new(:metrics_port => 9394).run
+      described_class.new(:metrics_port => port).run
       source.reload
     end
 
     context "with a simple payload" do
       let(:inventory) { JSON.load(File.read(test_inventory_dir.join("simple_inventory.json"))) }
+      let(:port) { 0 }
 
       it "saves the container group" do
         expect(source.container_projects.count).to eq(1)
@@ -50,6 +51,7 @@ describe TopologicalInventory::Persister::Worker do
 
     context "with some inter-object relationships" do
       let(:inventory) { JSON.load(File.read(test_inventory_dir.join("relationships_inventory.json"))) }
+      let(:port) { 0 }
 
       it "saves the different inventory objects" do
         expect(source.container_projects.count).to eq(1)
@@ -76,10 +78,29 @@ describe TopologicalInventory::Persister::Worker do
 
     context "with cross reference" do
       let(:inventory) { JSON.load(File.read(test_inventory_dir.join("cross_ref_inventory.json"))) }
+      let(:port) { 0 }
 
       it "links the container node with the vm" do
         container_node = source.container_nodes.first
         expect(container_node.lives_on).not_to be_nil
+      end
+    end
+
+    context "with old full-refresh messages" do
+      let(:inventory) do
+        JSON.parse(File.read(test_inventory_dir.join("simple_inventory.json"))).tap do |json|
+          json["ingress_api_sent_at"] = 120.minutes.ago.to_s
+          json["refresh_type"] = "full-refresh"
+        end
+      end
+      let(:port) { 9394 }
+
+      it "does not import the container_project" do
+        expect(source.container_projects.count).to eq(0)
+      end
+
+      it "records the skip" do
+        expect(PrometheusExporter::Client.default.collector.instance_variable_get("@metrics")["messages_total"].data[{:result =>"skipped"}]).to eq(1)
       end
     end
   end
