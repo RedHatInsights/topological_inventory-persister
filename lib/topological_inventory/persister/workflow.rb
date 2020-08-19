@@ -127,10 +127,13 @@ module TopologicalInventory
           :source          => manager.uid
         }
 
-        message[:payload] = persister.inventory_collections.select { |x| x.name }.index_by(&:name).transform_values! do |x|
+        # Reduce sending to vms only (for host-inventory-sync)
+        message[:payload] = persister.inventory_collections.select { |x| x.name == :vms }.index_by(&:name).transform_values! do |x|
           # service_instance_tasks' updated_records contain custom hashes
           # filled by custom_save_block (used by Workflow.send_task_updates_to_queue!)
-          next if x.name == :service_instance_tasks
+          #
+          # - When switched back to sending all, this collection should be skipped
+          # next if x.name == :service_instance_tasks
 
           hash = {}
           hash[:created] = x.created_records unless x.created_records.empty?
@@ -139,11 +142,13 @@ module TopologicalInventory
           hash.empty? ? nil : hash
         end.compact
 
-        messaging_client.publish_message(
-          :service => "platform.topological-inventory.persister-output-stream",
-          :message => "event",
-          :payload => message
-        )
+        if message[:payload].present?
+          messaging_client.publish_message(
+            :service => "platform.topological-inventory.persister-output-stream",
+            :message => "event",
+            :payload => message
+          )
+        end
       end
 
       def send_task_updates_to_queue!
