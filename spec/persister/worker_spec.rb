@@ -8,7 +8,7 @@ describe TopologicalInventory::Persister::Worker do
   let(:test_inventory_dir) { Pathname.new(__dir__).join("test_inventory") }
   let!(:source) do
     Source.find_or_create_by!(
-      :tenant => tenant, :uid => "9a874712-9a55-49ab-a46a-c823acc35503",
+      :tenant => tenant, :uid => "9a874712-9a55-49ab-a46a-c823acc35503"
     )
   end
   let(:source_aws) do
@@ -25,82 +25,94 @@ describe TopologicalInventory::Persister::Worker do
       allow(client).to receive(:close)
       allow(client).to receive(:publish_message)
       allow(client).to receive(:subscribe_topic).and_yield(message)
-
-      described_class.new(:metrics_port => port).run
-      source.reload
     end
 
-    context "with a simple payload" do
-      let(:inventory) { JSON.load(File.read(test_inventory_dir.join("simple_inventory.json"))) }
-      let(:port) { 0 }
-
-      it "saves the container group" do
-        expect(source.container_projects.count).to eq(1)
-        expect(source.container_projects.first).to have_attributes(
-          :source_ref       => "c56c6854-baaf-11e8-ba7e-d094660d31fb",
-          :name             => "default",
-          :display_name     => "Default",
-          :resource_version => "42001363",
-        )
+    context "with new messages" do
+      before do
+        described_class.new(:metrics_port => 0).run
+        source.reload
       end
 
-      it "sets the tenant to the source's tenant" do
-        expect(source.container_projects.first.tenant).to eq(source.tenant)
+      context "with a simple payload" do
+        let(:inventory) { JSON.parse(File.read(test_inventory_dir.join("simple_inventory.json"))) }
+
+        it "saves the container group" do
+          expect(source.container_projects.count).to eq(1)
+          expect(source.container_projects.first).to have_attributes(
+            :source_ref       => "c56c6854-baaf-11e8-ba7e-d094660d31fb",
+            :name             => "default",
+            :display_name     => "Default",
+            :resource_version => "42001363"
+          )
+        end
+
+        it "sets the tenant to the source's tenant" do
+          expect(source.container_projects.first.tenant).to eq(source.tenant)
+        end
       end
-    end
 
-    context "with some inter-object relationships" do
-      let(:inventory) { JSON.load(File.read(test_inventory_dir.join("relationships_inventory.json"))) }
-      let(:port) { 0 }
+      context "with some inter-object relationships" do
+        let(:inventory) { JSON.parse(File.read(test_inventory_dir.join("relationships_inventory.json"))) }
 
-      it "saves the different inventory objects" do
-        expect(source.container_projects.count).to eq(1)
-        expect(source.container_images.count).to   eq(1)
-        expect(source.container_nodes.count).to    eq(1)
-        expect(source.container_groups.count).to   eq(1)
-        expect(source.containers.count).to         eq(2)
+        it "saves the different inventory objects" do
+          expect(source.container_projects.count).to eq(1)
+          expect(source.container_images.count).to   eq(1)
+          expect(source.container_nodes.count).to    eq(1)
+          expect(source.container_groups.count).to   eq(1)
+          expect(source.containers.count).to         eq(2)
+        end
+
+        it "saves the relationships between objects" do
+          container_group = source.container_groups.first
+          container_image = source.container_images.first
+          container_project = source.container_projects.first
+          container_node = source.container_nodes.first
+
+          expect(container_group.container_project).to eq(container_project)
+          expect(container_group.container_node).to eq(container_node)
+          expect(container_group.containers.count).to eq(2)
+
+          container = container_group.containers.first
+          expect(container.container_image).to eq(container_image)
+        end
       end
 
-      it "saves the relationships between objects" do
-        container_group = source.container_groups.first
-        container_image = source.container_images.first
-        container_project = source.container_projects.first
-        container_node = source.container_nodes.first
+      context "with cross reference" do
+        let(:inventory) { JSON.parse(File.read(test_inventory_dir.join("cross_ref_inventory.json"))) }
 
-        expect(container_group.container_project).to eq(container_project)
-        expect(container_group.container_node).to eq(container_node)
-        expect(container_group.containers.count).to eq(2)
-
-        container = container_group.containers.first
-        expect(container.container_image).to eq(container_image)
-      end
-    end
-
-    context "with cross reference" do
-      let(:inventory) { JSON.load(File.read(test_inventory_dir.join("cross_ref_inventory.json"))) }
-      let(:port) { 0 }
-
-      it "links the container node with the vm" do
-        container_node = source.container_nodes.first
-        expect(container_node.lives_on).not_to be_nil
+        it "links the container node with the vm" do
+          container_node = source.container_nodes.first
+          expect(container_node.lives_on).not_to be_nil
+        end
       end
     end
 
     context "with old full-refresh messages" do
+      let(:persister_metrics) { instance_double(TopologicalInventory::Persister::Metrics) }
       let(:inventory) do
         JSON.parse(File.read(test_inventory_dir.join("simple_inventory.json"))).tap do |json|
           json["ingress_api_sent_at"] = 120.minutes.ago.to_s
           json["refresh_type"] = "full-refresh"
         end
       end
-      let(:port) { 9394 }
+
+      before do
+        # mock out the metrics so we hopefully won't run into port issues with specs anymore.
+        allow(TopologicalInventory::Persister::Metrics).to receive(:new).with(9394).and_return(persister_metrics)
+        allow(persister_metrics).to receive(:stop_server).and_return(true)
+        allow(persister_metrics).to receive(:record_process_timing).and_yield
+        allow(persister_metrics).to receive(:record_process).and_return(1)
+
+        described_class.new(:metrics_port => 9394).run
+        source.reload
+      end
 
       it "does not import the container_project" do
         expect(source.container_projects.count).to eq(0)
       end
 
       it "records the skip" do
-        expect(PrometheusExporter::Client.default.collector.instance_variable_get("@metrics")["messages_total"].data[{:result =>"skipped"}]).to eq(1)
+        expect(persister_metrics).to have_received(:record_process).with(:skipped).once
       end
     end
   end
