@@ -6,7 +6,7 @@ module TestInventory
 
       allow(client).to receive(:subscribe_topic).and_yield(message)
 
-      described_class.new(:metrics_port => 9394).run
+      described_class.new(:metrics_port => 0).run
       source.reload
     end
   end
