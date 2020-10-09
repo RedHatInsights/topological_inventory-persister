@@ -11,8 +11,16 @@ RUN dnf -y --disableplugin=subscription-manager module enable ruby:2.5 && \
       nmap-ncat \
       # To compile pg gem
       postgresql-devel libxml2-devel \
+      # For the rdkafka gem
+      cyrus-sasl-devel zlib-devel openssl-devel diffutils \
       && \
-    dnf --disableplugin=subscription-manager clean all
+      dnf --disableplugin=subscription-manager clean all
+
+COPY docker-assets/librdkafka-1.5.0.tar.gz /tmp/librdkafka.tar.gz
+RUN cd /tmp && tar -xf /tmp/librdkafka.tar.gz && cd librdkafka-1.5.0 && \
+    ./configure --prefix=/usr && \
+    make -j2 && make install && \
+    rm -rf /tmp/librdkafka*
 
 ENV WORKDIR /opt/topological_inventory-persister/
 ENV RAILS_ROOT $WORKDIR
@@ -22,7 +30,6 @@ COPY Gemfile $WORKDIR
 RUN echo "gem: --no-document" > ~/.gemrc && \
     gem install bundler --conservative --without development:test && \
     bundle install --jobs 8 --retry 3 && \
-    find $(gem env gemdir)/gems/ | grep "\.s\?o$" | xargs rm -rvf && \
     rm -rvf $(gem env gemdir)/cache/* && \
     rm -rvf /root/.bundle/cache
 
