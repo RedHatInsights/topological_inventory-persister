@@ -68,6 +68,8 @@ module TopologicalInventory
         nil
       else
         metrics.record_process
+      ensure
+        touch_heartbeat
       end
 
       def log_err_and_send_metric(e)
@@ -119,6 +121,10 @@ module TopologicalInventory
 
       def timeout
         (ENV['PERSISTER_TIMEOUT']&.to_i || 60).minutes.ago
+      end
+
+      def touch_heartbeat
+        FileUtils.touch("/tmp/healthy")
       end
     end
   end
