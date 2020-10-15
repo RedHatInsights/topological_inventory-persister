@@ -52,7 +52,7 @@ module TopologicalInventory
         end
 
         TopologicalInventory::Persister::Workflow.new(load_persister(payload), client, payload).execute!
-      rescue PG::ConnectionBad, Kafka::DeliveryFailed, Kafka::ConnectionError => e
+      rescue PG::ConnectionBad, ::Rdkafka::Producer::DeliveryHandle::WaitTimeoutError, ::Rdkafka::RdkafkaError => e
         log_err_and_send_metric(e)
         raise
       rescue ActiveRecord::StatementInvalid => e
