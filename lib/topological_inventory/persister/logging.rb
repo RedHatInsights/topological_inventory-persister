@@ -7,7 +7,7 @@ module TopologicalInventory
     end
 
     def self.logger
-      @logger ||= ManageIQ::Loggers::CloudWatch.new
+      @logger ||= ManageIQ::Loggers::CloudWatch.new.tap { |log| log.level = ENV["LOG_LEVEL"] || "INFO" }
     end
 
     module Logging
