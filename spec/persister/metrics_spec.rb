@@ -8,7 +8,7 @@ describe TopologicalInventory::Persister::Metrics do
   it "exposes metrics" do
     subject.record_process
     subject.record_process
-    subject.record_process false
+    subject.record_process(:error)
     subject.record_process_timing { }
 
     metrics = get_metrics

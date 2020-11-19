@@ -14,16 +14,10 @@ module TopologicalInventory
         configure_metrics
       end
 
-      def record_process(success = true)
-        @process_counter&.observe(1, :result => case success
-                                                when true
-                                                  "success"
-                                                when false
-                                                  "error"
-                                                when :skipped
-                                                  "skipped"
-                                                end
-        )
+      # @param status [Symbol] - :success, :error, :skipped, :requeued
+      # @param labels [Hash] - keys == :error_class,
+      def record_process(status = :success, labels = {})
+        @process_counter&.observe(1, labels.merge(:result => status.to_s))
       end
 
       def record_process_timing
