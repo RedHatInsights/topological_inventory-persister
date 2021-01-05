@@ -51,7 +51,15 @@ module TopologicalInventory
           return
         end
 
-        TopologicalInventory::Persister::Workflow.new(load_persister(payload), client, payload).execute!
+        metrics_status = TopologicalInventory::Persister::Workflow.new(load_persister(payload), client, payload).execute!
+
+        metrics_status, metrics_labels = case metrics_status
+                                         when :sweep_limit_error then [:error, {:error_class => 'SweepRetryLimit'}]
+                                         when :sweep_start_error then [:error, {:error_class => 'SweepStartError'}]
+                                         else [(metrics_status.presence || :success), {}]
+                                         end
+
+        metrics.record_process(metrics_status, metrics_labels)
       rescue PG::ConnectionBad, ::Rdkafka::Producer::DeliveryHandle::WaitTimeoutError, ::Rdkafka::RdkafkaError => e
         log_err_and_send_metric(e)
         raise
@@ -66,14 +74,12 @@ module TopologicalInventory
       rescue => e
         log_err_and_send_metric(e)
         nil
-      else
-        metrics.record_process
       ensure
         touch_heartbeat
       end
 
       def log_err_and_send_metric(e)
-        metrics.record_process(false)
+        metrics.record_process(:error, :error_class => e.class.name)
         logger.error("#{e.class}:  #{e.message}\n#{e.backtrace.join("\n")}")
       end
 

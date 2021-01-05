@@ -115,6 +115,8 @@ module TopologicalInventory
         log_refresh_time_tracking(:refresh_state_part)
 
         upsert_refresh_state_records(:status => :finished)
+
+        :success
       rescue StandardError => e
         upsert_refresh_state_records(:status => :error, :error_message => e.message.truncate(150))
 
@@ -214,9 +216,12 @@ module TopologicalInventory
 
       def start_sweeping!(refresh_state)
         error_count = refresh_state.refresh_state_parts.where(:status => :error).count
+        result = :success
 
         if error_count.positive?
           update(refresh_state, :status => :error, :error_message => "Error when saving one or more parts, sweeping can't be done.")
+
+          result = :sweep_start_error
         else
           update(refresh_state, :status => :sweeping)
           InventoryRefresh::SaveInventory.sweep_inactive_records(manager, inventory_collections, sweep_scope, refresh_state)
@@ -227,7 +232,9 @@ module TopologicalInventory
                  :status      => :finished,
                  :started_at  => refresh_state_started_at,
                  :finished_at => persister_finished_at)
+
         end
+        result
       end
 
       def wait_for_sweeping!(refresh_state)
@@ -239,10 +246,14 @@ module TopologicalInventory
             :status        => :error,
             :error_message => "Sweep retry count limit of #{sweep_retry_count_limit} was reached."
           )
+          result = :sweep_limit_error
         else
           update(refresh_state, :status => :waiting_for_refresh_state_parts, :sweep_retry_count => sweep_retry_count)
           requeue_sweeping!
+          result = :requeued
         end
+
+        result # send to metrics
       end
 
       def requeue_sweeping!
