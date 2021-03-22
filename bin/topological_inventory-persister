@@ -3,12 +3,13 @@
 $LOAD_PATH << File.expand_path("../lib", __dir__)
 require "bundler/setup"
 require "topological_inventory/persister/worker"
+require "topological_inventory/persister/clowder_config"
 require "topological_inventory/core/ar_helper"
 
 opts = {
-  :host => ENV["QUEUE_HOST"] || "localhost",
-  :port => (ENV["QUEUE_PORT"] || 9092).to_i,
-  :metrics_port => (ENV["METRICS_PORT"] || 9394).to_i # 0 disables metrics
+  :host         => TopologicalInventory::Persister::ClowderConfig.instance["kafkaHost"],
+  :port         => TopologicalInventory::Persister::ClowderConfig.instance["kafkaPort"].to_i,
+  :metrics_port => TopologicalInventory::Persister::ClowderConfig.instance["metricsPort"].to_i # 0 disables metrics
 }
 
 TopologicalInventory::Core::ArHelper.database_yaml_path = Pathname.new(__dir__).join("../config/database.yml")

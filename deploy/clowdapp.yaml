@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: topological-inventory-persister
+objects:
+- apiVersion: v1
+  kind: Secret # For ephemeral/local environment
+  metadata:
+    name: topological-inventory-api-secrets
+    labels:
+      app: topo-api
+  stringData:
+    encryption-key: "${ENCRYPTION_KEY}"
+    secret-key: "${SECRET_KEY}"
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdApp
+  metadata:
+    name: topo-persister
+  spec:
+    envName: ${ENV_NAME}
+    deployments:
+    - name: svc
+      minReplicas: ${{MIN_REPLICAS}}
+      podSpec:
+        image: ${IMAGE}:${IMAGE_TAG}
+        env:
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: topological-inventory-api-secrets
+              key: encryption-key
+        - name: LOG_LEVEL
+          value: ${LOG_LEVEL}
+        - name: PERSISTER_TIMEOUT
+          value: ${PERSISTER_TIMEOUT}
+        livenessProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - find /tmp -mmin -30 2>/dev/null | grep healthy
+          initialDelaySeconds: 30
+          periodSeconds: 60
+        resources:
+          limits:
+            cpu: ${CPU_LIMIT}
+            memory: ${MEMORY_LIMIT}
+          requests:
+            cpu: ${CPU_REQUEST}
+            memory: ${MEMORY_REQUEST}
+    database:
+      sharedDbAppName: topo-api
+    dependencies:
+    - topo-api
+    kafkaTopics:
+    - topicName: platform.topological-inventory.persister # consumer
+      partitions: 3
+      replicas: 3
+parameters:
+- name: CPU_LIMIT
+  value: 300m
+- name: CPU_REQUEST
+  value: 100m
+- description: Clowder ENV
+  name: ENV_NAME
+  required: true
+- description: Image
+  name: IMAGE
+  value: quay.io/cloudservices/topological-inventory-persister
+- description: Image tag
+  name: IMAGE_TAG
+  required: true
+- name: LOG_LEVEL
+  value: WARN
+- name: MEMORY_LIMIT
+  value: 300Mi
+- name: MEMORY_REQUEST
+  value: 150Mi
+- description: The number of replicas to use for the prometheus deployment
+  name: MIN_REPLICAS
+  value: '2'
+- name: PERSISTER_TIMEOUT
+  displayName: Persister Timeout for Ingress API Messages
+  value: "60"

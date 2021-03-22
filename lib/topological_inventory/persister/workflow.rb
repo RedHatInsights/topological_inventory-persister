@@ -1,4 +1,5 @@
 require "topological_inventory/persister/logging"
+require "topological_inventory/persister/clowder_config"
 
 module TopologicalInventory
   module Persister
@@ -146,7 +147,7 @@ module TopologicalInventory
 
         if message[:payload].present?
           messaging_client.publish_message(
-            :service => "platform.topological-inventory.persister-output-stream",
+            :service => TopologicalInventory::Persister::ClowderConfig.kafka_topic("platform.topological-inventory.persister-output-stream"),
             :message => "event",
             :payload => message
           )
@@ -161,7 +162,7 @@ module TopologicalInventory
           forwardable_headers = payload.delete(:forwardable_headers)
 
           messaging_client.publish_topic(
-            :service => "platform.topological-inventory.task-output-stream",
+            :service => TopologicalInventory::Persister::ClowderConfig.kafka_topic("platform.topological-inventory.task-output-stream"),
             :event   => "Task.update",
             :payload => payload,
             :headers => forwardable_headers
@@ -259,7 +260,7 @@ module TopologicalInventory
       def requeue_sweeping!
         logger.info("Re-queuing sweeping job...")
         messaging_client.publish_message(
-          :service => "platform.topological-inventory.persister",
+          :service => TopologicalInventory::Persister::ClowderConfig.kafka_topic("platform.topological-inventory.persister"),
           :message => "save_inventory",
           :payload => payload,
         )
