@@ -4,6 +4,7 @@ require "topological_inventory/persister/exception"
 require "topological_inventory/persister/logging"
 require "topological_inventory/persister/workflow"
 require "topological_inventory/persister/metrics"
+require "topological_inventory/persister/clowder_config"
 require "topological_inventory/schema"
 
 module TopologicalInventory
@@ -106,7 +107,7 @@ module TopologicalInventory
 
       def queue_opts
         {
-          :service     => "platform.topological-inventory.persister",
+          :service     => TopologicalInventory::Persister::ClowderConfig.kafka_topic("platform.topological-inventory.persister"),
           :persist_ref => "persister_worker"
         }
       end
