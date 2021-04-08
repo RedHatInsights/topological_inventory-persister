@@ -16,9 +16,6 @@ objects:
   kind: ClowdApp
   metadata:
     name: topo-persister
-    labels:
-      app: topological-inventory
-      clowdapp: topo-persister
   spec:
     envName: ${ENV_NAME}
     deployments:
