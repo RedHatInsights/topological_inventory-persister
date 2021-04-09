@@ -13,6 +13,8 @@ RUN dnf -y --disableplugin=subscription-manager module enable ruby:2.6 && \
       postgresql-devel libxml2-devel \
       # For the rdkafka gem
       cyrus-sasl-devel zlib-devel openssl-devel diffutils \
+      # For the mimemagic gem
+      shared-mime-info \
       && \
       dnf --disableplugin=subscription-manager clean all
 
